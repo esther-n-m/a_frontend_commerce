@@ -5,7 +5,7 @@
  */
 
 // !!! CRITICAL: Set this to your actual live Render backend URL !!!
-const BACKEND_URL = "https://backend-commerce-7ncw.onrender.com/"; 
+const BACKEND_URL = "https://backend-commerce-7ncw.onrender.com"; 
 window.BASE_URL = BACKEND_URL;
 
 // --- Utility Functions ---
