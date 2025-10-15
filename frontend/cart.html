@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sovereign Home | Shopping Cart</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Use an elegant, sophisticated font like Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-gold: #D4AF37; /* Standard gold color */
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d0d0d; /* Very dark background */
+            color: #f5f5f5; /* Off-white text */
+            min-height: 100vh;
+        }
+        .text-gold {
+            color: var(--color-gold);
+        }
+        .bg-gold {
+            background-color: var(--color-gold);
+        }
+        .border-gold {
+            border-color: var(--color-gold);
+        }
+        .btn-gold {
+            background-color: var(--color-gold);
+            color: #0d0d0d;
+            transition: all 0.3s;
+        }
+        .btn-gold:hover {
+            background-color: #E0C16E; /* Slightly lighter gold on hover */
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+        }
+        /* Custom scrollbar for dark theme aesthetic */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2c2c2c;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3a3a3a;
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <!-- Message Container for notifications (required by displayMessage function) -->
+    <div id="message-container" class="fixed top-4 right-4 z-50 max-w-sm"></div>
+
+    <!-- Header / Navigation -->
+    <header class="border-b border-gray-800 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <a href="index.html" class="text-3xl font-bold tracking-tight text-gold uppercase">
+                Sovereign <span class="text-gray-300">Home</span>
+            </a>
+            <nav>
+                <a href="index.html" class="text-gray-400 hover:text-gold transition duration-150 text-sm sm:text-base font-medium">Continue Shopping</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        <h1 class="text-4xl font-extrabold mb-8 text-white tracking-wider">Your Shopping Cart</h1>
+
+        <div id="cart-content" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Column 1 & 2: Cart Items List -->
+            <section class="lg:col-span-2 bg-gray-900 p-6 rounded-xl shadow-2xl space-y-6" id="cart-items-container">
+                <!-- Placeholder when rendering is ongoing -->
+                <p id="loading-text" class="text-center text-gray-500 py-10">Loading cart...</p>
+                
+                <!-- Empty cart message -->
+                <div id="empty-cart-message" class="hidden text-center py-10">
+                    <p class="text-2xl font-semibold mb-3">Your cart is currently empty.</p>
+                    <p class="text-gray-400 mb-6">Explore our curated collection of luxury home goods.</p>
+                    <a href="index.html" class="inline-block px-8 py-3 rounded-lg btn-gold text-base font-semibold shadow-lg">Start Shopping Now</a>
+                </div>
+                <!-- Cart items will be rendered here dynamically by JavaScript -->
+            </section>
+
+            <!-- Column 3: Cart Summary and Checkout -->
+            <section class="lg:col-span-1">
+                <div class="bg-gray-900 p-6 rounded-xl shadow-2xl sticky top-4">
+                    <h2 class="text-xl font-semibold mb-4 border-b border-gray-800 pb-3">Order Summary</h2>
+
+                    <div class="space-y-3 mb-6 text-sm">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400">Subtotal:</span>
+                            <span class="font-medium" id="cart-subtotal">Ksh 0.00</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400">Shipping Estimate:</span>
+                            <span class="font-medium text-green-400" id="cart-shipping">FREE</span>
+                        </div>
+                        <div class="flex justify-between items-center pt-3 border-t border-gray-800">
+                            <span class="text-xl font-bold">Order Total:</span>
+                            <span class="text-xl font-bold text-gold" id="cart-total">Ksh 0.00</span>
+                        </div>
+                    </div>
+
+                    <button id="checkout-btn" class="w-full py-3 rounded-lg btn-gold font-bold uppercase disabled:opacity-50" disabled>
+                        Proceed to Checkout
+                    </button>
+                    
+                    <button id="clear-cart-btn" class="w-full mt-4 py-2 rounded-lg bg-red-600 text-white font-medium text-sm hover:bg-red-700 transition duration-150">
+                        Clear Cart
+                    </button>
+                </div>
+            </section>
+        </div>
+
+    </main>
+
+    <!--
+        -- JAVASCRIPT LOGIC --
+        Includes the necessary utility functions for a self-contained cart page.
+    -->
+    <script>
+        const CART_STORAGE_KEY = 'ecom_cart';
+        const checkoutBtn = document.getElementById('checkout-btn');
+        const clearCartBtn = document.getElementById('clear-cart-btn');
+
+        /**
+          * Displays a temporary, fixed message box for user feedback.
+          * @param {string} message - The message content.
+          * @param {string} type - 'success', 'error', or 'info'.
+         */
+        function displayMessage(message, type = 'info') {
+            const container = document.getElementById('message-container');
+            if (!container) {
+                console.log(`[Message: ${type}] ${message}`);
+                return;
+            }
+
+            const msgBox = document.createElement('div');
+            msgBox.className = `p-3 mb-2 rounded-lg text-sm transition-opacity duration-300 shadow-xl ${
+                type === 'success' ? 'bg-green-500 text-white' :
+                type === 'error' ? 'bg-red-500 text-white' :
+                'bg-blue-500 text-white'
+            }`;
+            msgBox.textContent = message;
+            
+            // Add to container and set up auto-removal
+            container.prepend(msgBox);
+            
+            setTimeout(() => {
+                msgBox.style.opacity = '0';
+                setTimeout(() => msgBox.remove(), 300);
+            }, 5000); // Message disappears after 5 seconds
+        }
+
+        /**
+          * Retrieves the cart array from localStorage.
+          * @returns {Array} The cart items array.
+         */
+        function getCart() {
+            const cartJson = localStorage.getItem(CART_STORAGE_KEY);
+            try {
+                return cartJson ? JSON.parse(cartJson) : [];
+            } catch (e) {
+                console.error("Error parsing cart from localStorage:", e);
+                return []; // Return an empty cart on error
+            }
+        }
+
+        /**
+          * Saves the cart array back to localStorage.
+          * @param {Array} cart - The cart items array to save.
+         */
+        function saveCart(cart) {
+            localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+        }
+
+        /**
+          * Calculates the total price of all items in the cart.
+          * @param {Array} cart - The cart array.
+          * @returns {number} The total price.
+         */
+        function calculateCartTotal(cart) {
+            // Reduce the array to calculate the total sum (price * quantity)
+            return cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+        }
+        
+        /**
+          * Completely clears all items from the cart. (Exposed globally for checkout.html to use)
+         */
+        window.clearCart = function() {
+            saveCart([]);
+            displayMessage('Cart cleared successfully.', 'info');
+            updateCartUI(); // Re-render the UI after clearing
+        }
+        
+        /**
+         * Renders the HTML for a single cart item.
+         */
+        const renderCartItem = (item) => {
+            // Display size and scent options if they exist
+            const optionsHtml = item.size || item.scent 
+                ? `<p class="text-xs text-gray-500 mt-1">${item.size ? `Size: ${item.size}` : ''} ${item.scent ? `Scent: ${item.scent}` : ''}</p>`
+                : '';
+            
+            // Format price as currency (assuming Ksh)
+            const price = (item.price * item.quantity).toFixed(2);
+            
+            return `
+                <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 border-b border-gray-800 pb-4 last:border-b-0 last:pb-0">
+                    <!-- Image -->
+                    <img src="${item.image || 'https://placehold.co/100x100/1e1e1e/d4af37?text=Product'}" 
+                         alt="${item.name}" 
+                         onerror="this.onerror=null;this.src='https://placehold.co/100x100/1e1e1e/d4af37?text=Product';"
+                         class="w-24 h-24 object-cover rounded-lg shadow-md flex-shrink-0">
+                    
+                    <!-- Details & Controls Wrapper (Flex-grow takes available space) -->
+                    <div class="flex-grow min-w-0 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full">
+                        
+                        <!-- Product Info -->
+                        <div class="min-w-0 flex-grow">
+                            <h3 class="text-lg font-semibold truncate">${item.name}</h3>
+                            ${optionsHtml}
+                            <p class="text-sm text-gray-400 mt-1">Ksh ${(item.price).toFixed(2)} / item</p>
+                        </div>
+                        
+                        <!-- Quantity Controls -->
+                        <div class="flex items-center justify-start sm:justify-center space-x-2 flex-shrink-0">
+                            <button type="button" data-id="${item.id}" data-action="decrement-qty" 
+                                    class="w-8 h-8 flex items-center justify-center bg-gray-800 hover:bg-gray-700 text-white rounded-full transition-colors">
+                                -
+                            </button>
+                            <input type="number" value="${item.quantity}" min="1" data-id="${item.id}" class="qty-input w-12 text-center bg-gray-700 text-white rounded-md p-1 focus:ring-1 focus:ring-gold border-none">
+                            <button type="button" data-id="${item.id}" data-action="increment-qty" 
+                                    class="w-8 h-8 flex items-center justify-center bg-gray-800 hover:bg-gray-700 text-white rounded-full transition-colors">
+                                +
+                            </button>
+                        </div>
+                        
+                        <!-- Subtotal & Remove -->
+                        <div class="flex flex-col items-start sm:items-end space-y-2 flex-shrink-0 w-24">
+                            <p class="text-lg font-bold text-gold">Ksh ${price}</p>
+                            <button type="button" data-id="${item.id}" data-action="remove-item" 
+                                    class="text-xs text-red-400 hover:text-red-500 transition-colors">
+                                Remove
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+        
+        /**
+         * Updates the quantity of an item in the cart.
+         */
+        const updateQuantity = (productId, newQuantity) => {
+            let cart = getCart();
+            const itemIndex = cart.findIndex(item => item.id.toString() === productId.toString());
+            
+            if (itemIndex > -1) {
+                // Ensure quantity is not less than 1
+                const quantityToUse = Math.max(1, newQuantity); 
+                
+                if (cart[itemIndex].quantity !== quantityToUse) {
+                    cart[itemIndex].quantity = quantityToUse;
+                    saveCart(cart);
+                    displayMessage(`Updated quantity for ${cart[itemIndex].name} to ${quantityToUse}.`, 'info');
+                    updateCartUI();
+                }
+            } else {
+                 displayMessage('Error: Item not found in cart.', 'error');
+            }
+        };
+
+        /**
+         * Removes an item from the cart completely.
+         */
+        const removeItem = (productId) => {
+            let cart = getCart();
+            const initialLength = cart.length;
+            
+            // Filter out the item to remove
+            cart = cart.filter(item => item.id.toString() !== productId.toString());
+
+            if (cart.length < initialLength) {
+                saveCart(cart);
+                displayMessage('Item removed from cart.', 'info');
+                updateCartUI();
+            } else {
+                displayMessage('Error: Item not found in cart for removal.', 'error');
+            }
+        };
+
+
+        /**
+         * Main function to fetch cart data and render the entire UI.
+         */
+        const updateCartUI = () => {
+            const cart = getCart();
+            const itemsContainer = document.getElementById('cart-items-container');
+            const subtotalEl = document.getElementById('cart-subtotal');
+            const totalEl = document.getElementById('cart-total');
+            const emptyMessage = document.getElementById('empty-cart-message');
+            const loadingText = document.getElementById('loading-text');
+
+            loadingText.classList.add('hidden'); // Hide loading indicator
+
+            if (cart.length === 0) {
+                itemsContainer.innerHTML = ''; // Clear items area
+                emptyMessage.classList.remove('hidden'); // Show empty message
+                checkoutBtn.disabled = true; // Disable checkout
+                subtotalEl.textContent = 'Ksh 0.00';
+                totalEl.textContent = 'Ksh 0.00';
+                return;
+            }
+
+            emptyMessage.classList.add('hidden'); // Hide empty message
+            checkoutBtn.disabled = false; // Enable checkout
+
+            // 1. Render Items
+            const itemsHtml = cart.map(renderCartItem).join('');
+            // The item container section already has the title and formatting, so we only update the content inside.
+            itemsContainer.innerHTML = `<h2 class="text-xl font-semibold mb-6 border-b border-gray-800 pb-3">Items (${cart.length})</h2>${itemsHtml}`;
+
+            // 2. Calculate and Render Totals
+            const subtotal = calculateCartTotal(cart);
+            const shipping = 0; // Assuming free shipping for simplicity
+            const total = subtotal + shipping;
+
+            subtotalEl.textContent = `Ksh ${subtotal.toFixed(2)}`;
+            totalEl.textContent = `Ksh ${total.toFixed(2)}`;
+            
+            // 3. Attach Event Listeners
+            attachEventListeners();
+        };
+
+        /**
+         * Attaches listeners for dynamic cart actions (quantity change, remove) using event delegation.
+         */
+        const attachEventListeners = () => {
+            const container = document.getElementById('cart-items-container');
+
+            // We use event delegation on the main container for clicks on buttons
+            container.addEventListener('click', (e) => {
+                const target = e.target.closest('button');
+                if (!target) return;
+
+                const id = target.getAttribute('data-id');
+                const action = target.getAttribute('data-action');
+                // Find the nearest quantity input to get the current quantity
+                const qtyInput = target.closest('.flex-col, .flex-row').querySelector('.qty-input');
+                let currentQty = parseInt(qtyInput?.value || 0);
+                
+                if (!id) return;
+
+                // Handle remove button
+                if (action === 'remove-item') {
+                    removeItem(id);
+                } 
+                // Handle quantity increment/decrement buttons
+                else if (action === 'increment-qty') {
+                    updateQuantity(id, currentQty + 1);
+                } else if (action === 'decrement-qty' && currentQty > 1) {
+                    updateQuantity(id, currentQty - 1);
+                }
+            });
+
+            // Listener for direct input changes (needs to be attached to inputs directly)
+            container.querySelectorAll('.qty-input').forEach(input => {
+                // Remove existing listener to prevent duplicates (important after re-rendering)
+                input.onchange = null; 
+                input.addEventListener('change', (e) => {
+                    const id = e.target.getAttribute('data-id');
+                    const newQty = parseInt(e.target.value);
+                    if (newQty >= 1) {
+                        updateQuantity(id, newQty);
+                    } else {
+                        // Revert to 1 if user types a number less than 1
+                        e.target.value = 1; 
+                        updateQuantity(id, 1);
+                    }
+                });
+            });
+        };
+        
+        // --- Initialization ---
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateCartUI();
+        });
+        
+        // --- Checkout and Clear Cart Actions ---
+        
+        checkoutBtn.addEventListener('click', () => {
+             const cart = getCart();
+             if (cart.length > 0) {
+                 window.location.href = 'checkout.html';
+             } else {
+                 displayMessage("Your cart is empty. Please add items before checking out.", 'error');
+             }
+        });
+        
+        clearCartBtn.addEventListener('click', () => {
+            window.clearCart();
+        });
+        
+    </script>
+</body>
+</html>

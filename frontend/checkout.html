@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout | Sovereign Home</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --color-gold: #D4AF37;
+        }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #0d0d0d; /* Dark background */
+            color: #f5f5f5; /* Light text */
+            min-height: 100vh;
+        }
+        .text-gold {
+            color: var(--color-gold);
+        }
+        .bg-gold {
+            background-color: var(--color-gold);
+        }
+        .border-gold {
+            border-color: var(--color-gold);
+        }
+        .btn-gold {
+            background-color: var(--color-gold);
+            color: #0d0d0d;
+            transition: all 0.3s;
+        }
+        .btn-gold:hover {
+            background-color: #E0C16E;
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+        }
+        /* Adjusted container for dark mode aesthetic */
+        .checkout-container { 
+            max-width: 1000px; 
+            margin: 40px auto; 
+            padding: 20px; 
+            background-color: #1a1a1a; /* Darker card background */
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+        }
+        @media (max-width: 1024px) {
+            .checkout-container { margin: 10px; padding: 10px; }
+            .lg\:col-span-2 { order: 2; } 
+            .lg\:col-span-1 { order: 1; } 
+        }
+        
+        /* Style for the fixed message container */
+        #message-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 50;
+            max-width: 300px;
+        }
+    </style>
+    <!-- Assuming cart.js is included or its functions are globally available -->
+    <script src="./cart.js"></script>
+</head>
+<body>
+    <!-- Message Container for notifications -->
+    <div id="message-container"></div>
+    
+    <div class="checkout-container">
+        <header class="mb-8 border-b border-gray-700 pb-4">
+            <h1 class="text-4xl font-bold text-gold">Checkout</h1>
+        </header>
+
+        <div class="grid lg:grid-cols-3 gap-8">
+            <!-- Order Details (Payment & Phone Input) -->
+            <div class="lg:col-span-2 space-y-8">
+                
+                <!-- Shipping Information Placeholder -->
+                <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                    <h2 class="text-2xl font-semibold mb-4 text-white">Shipping Details</h2>
+                    <p class="text-gray-400 mb-4">Shipping is currently fixed at Ksh 500 within the Nairobi area.</p>
+                    <form id="shipping-form" class="space-y-4">
+                        <label for="name" class="block text-sm font-medium text-gray-300">Full Name</label>
+                        <input type="text" id="name" name="name" placeholder="John Doe" required
+                               class="w-full rounded-md border-gray-700 bg-gray-900 text-white focus:border-gold focus:ring-gold py-2 px-3">
+                        
+                        <label for="address" class="block text-sm font-medium text-gray-300">Delivery Address</label>
+                        <textarea id="address" name="address" placeholder="Apartment, building, or street name" rows="3" required
+                                  class="w-full rounded-md border-gray-700 bg-gray-900 text-white focus:border-gold focus:ring-gold py-2 px-3"></textarea>
+                    </form>
+                </div>
+
+                <!-- Payment Method (Mpesa STK Push) -->
+                <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                    <h2 class="text-2xl font-semibold mb-4 text-white">Payment Method</h2>
+                    
+                    <div class="flex items-center space-x-3 mb-6 p-4 border border-gold rounded-lg bg-gray-900">
+                        <!-- Mpesa Icon Placeholder -->
+                        <img src="https://placehold.co/40x40/00A352/ffffff?text=M" alt="Mpesa Logo" class="rounded-full">
+                        <span class="font-bold text-lg text-green-400">Mpesa STK Push</span>
+                    </div>
+
+                    <form id="mpesa-form">
+                        <label for="phone-number" class="block text-sm font-medium text-gray-300 mb-1">Mpesa Phone Number</label>
+                        <div class="mt-1 relative rounded-md shadow-sm">
+                            <!-- ACCESSIBILITY FIX: Added title attribute -->
+                            <input type="text" id="phone-number" name="phone-number"
+                                   title="Enter Mpesa phone number"
+                                   class="block w-full rounded-md border-gray-700 bg-gray-900 text-white pl-4 pr-12 py-2 focus:border-gold focus:ring-gold"
+                                   placeholder="e.g., 2547XXXXXXXX"
+                                   value="">
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                                <span class="text-gray-500 sm:text-sm">KES</span>
+                            </div>
+                        </div>
+
+                        <p id="loading-message" class="text-sm text-yellow-400 mt-2 hidden">Processing payment...</p>
+
+                        <button type="submit" id="mpesa-pay-btn" 
+                                class="btn-gold w-full py-3 mt-6 rounded-lg font-bold text-lg shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
+                            Pay with Mpesa
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="lg:col-span-1 bg-gray-800 p-6 rounded-lg shadow-2xl">
+                <h2 class="text-2xl font-bold mb-4 border-b border-gray-700 pb-3 text-white">Order Summary</h2>
+                
+                <div id="cart-items-list" class="space-y-3 mb-6">
+                    <!-- Cart items will be rendered here -->
+                </div>
+
+                <div class="space-y-2 border-t border-gray-700 pt-4">
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Subtotal</span>
+                        <span id="subtotal" class="font-medium text-white">Ksh 0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Shipping</span>
+                        <span id="shipping" class="font-medium text-white">Ksh 0</span>
+                    </div>
+                    <div class="flex justify-between text-xl font-bold pt-2 border-t border-gold">
+                        <span class="text-gold">Order Total</span>
+                        <span id="total" class="text-gold">Ksh 0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Ensure the global functions from cart.js are available
+        const { getCart, calculateCartTotal, clearCart, displayMessage, BACKEND_URL } = window;
+        
+        // DOM element references
+        const itemsList = document.getElementById('cart-items-list');
+        const subtotalEl = document.getElementById('subtotal');
+        const shippingEl = document.getElementById('shipping');
+        const totalEl = document.getElementById('total');
+        const phoneInput = document.getElementById('phone-number');
+        const payButton = document.getElementById('mpesa-pay-btn');
+        const loadingMessage = document.getElementById('loading-message');
+
+        /**
+         * Renders the cart items and updates the summary totals.
+         */
+        const renderCartItems = () => {
+            const items = getCart();
+            const subtotal = calculateCartTotal(items);
+            
+            // Fixed shipping cost for demonstration
+            const shipping = subtotal > 0 ? 500 : 0; 
+            const total = subtotal + shipping;
+
+            // Update summary totals
+            subtotalEl.textContent = `Ksh ${subtotal.toLocaleString()}`;
+            shippingEl.textContent = `Ksh ${shipping.toLocaleString()}`;
+            totalEl.textContent = `Ksh ${total.toLocaleString()}`;
+
+            // Handle empty cart state
+            if (items.length === 0) {
+                itemsList.innerHTML = '<p class="text-gray-400">Your cart is empty. Please add items before checking out.</p>';
+                payButton.disabled = true;
+                return;
+            } else {
+                payButton.disabled = false;
+            }
+
+            // Render cart items with options
+            itemsList.innerHTML = items.map(item => {
+                
+                // Construct string to display selected options (e.g., Size: Large, Scent: Vanilla)
+                let optionsHtml = '';
+                if (item.options && Object.keys(item.options).length > 0) {
+                    optionsHtml = Object.entries(item.options).map(([key, value]) => 
+                        `<span class="text-xs text-gray-500 capitalize">${key}: ${value}</span>`
+                    ).join(', ');
+                }
+                
+                return `
+                    <div class="flex justify-between items-start py-3 border-b border-gray-700">
+                        <div class="flex flex-col">
+                            <span class="font-medium text-white">${item.name}</span>
+                            <!-- Display Options -->
+                            ${optionsHtml ? `<div class="mt-0.5">${optionsHtml}</div>` : ''}
+                            <span class="text-sm text-gray-400">Qty: ${item.quantity}</span>
+                        </div>
+                        <span class="font-semibold text-white">Ksh ${(item.price * item.quantity).toLocaleString()}</span>
+                    </div>
+                `;
+            }).join('');
+        };
+
+        /**
+         * Retries the fetch request with exponential backoff.
+         * @param {string} url - The API endpoint URL.
+         * @param {object} options - Fetch options (method, headers, body).
+         * @param {number} retries - Number of retries left.
+         */
+        const fetchWithRetry = async (url, options, retries = 3) => {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (response.status !== 429) { // 429 is Too Many Requests (handled by retry)
+                        return response;
+                    }
+                } catch (error) {
+                    // Log error but continue to retry
+                    console.error(`Fetch attempt ${i + 1} failed:`, error);
+                }
+                // Exponential backoff
+                const delay = Math.pow(2, i) * 1000;
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+            throw new Error("Failed to connect to the server after multiple retries.");
+        };
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // Add event listener for the payment button
+            payButton.addEventListener('click', async (e) => {
+                e.preventDefault(); 
+                
+                // Get current cart and total
+                const cart = getCart();
+                const totalAmount = calculateCartTotal(cart) + (cart.length > 0 ? 500 : 0); // Include shipping
+                const phoneNumber = phoneInput.value.trim();
+                
+                // --- Validation Check ---
+                // Mpesa phone number validation (must be 10-12 digits and start with 254)
+                if (!/^(2547|07|2541|01)\d{8}$/.test(phoneNumber) && !/^\d{10,12}$/.test(phoneNumber)) {
+                    displayMessage('Please enter a valid Mpesa phone number (e.g., 2547xxxxxxxx).', 'error');
+                    return;
+                }
+                
+                if (totalAmount <= 0) {
+                    displayMessage('Your cart total must be greater than zero to proceed with payment.', 'error');
+                    return;
+                }
+                
+                // Prepare UI for loading state
+                payButton.disabled = true;
+                loadingMessage.classList.remove('hidden');
+                payButton.textContent = 'Initiating STK Push...';
+
+                const payload = {
+                    phoneNumber: phoneNumber,
+                    amount: totalAmount,
+                    // In a real application, you would send item details/order ID here
+                };
+
+                try {
+                    const response = await fetchWithRetry(`${BACKEND_URL}/api/mpesa/stk-push`, {
+                        method: 'POST',
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload),
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok && data.success) {
+                        displayMessage(`SUCCESS! STK Push sent to your phone. Complete transaction on your device. (TX ID: ${data.transactionId})`, 'success');
+                        // Use the globally exposed clearCart function from cart.js
+                        window.clearCart(); 
+                    } else {
+                        // Handle failure responses
+                        displayMessage(`PAYMENT FAILED: ${data.message || 'Unknown error occurred.'}`, 'error');
+                    }
+
+                } catch (err) {
+                    console.error("Fetch error during payment:", err);
+                    displayMessage('Network error occurred. The server may be unreachable.', 'error');
+                } finally {
+                    // Reset UI state
+                    payButton.disabled = false;
+                    loadingMessage.classList.add('hidden');
+                    payButton.textContent = 'Pay with Mpesa';
+                    renderCartItems(); // Re-render to show empty cart or current items
+                }
+            });
+
+            // Initial render when the page loads
+            renderCartItems();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sovereign Home | Luxury Pillows & Candles</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Use an elegant, sophisticated font like Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-gold: #D4AF37; /* Standard gold color */
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d0d0d; /* Very dark background */
+            color: #f5f5f5; /* Off-white text */
+        }
+        .text-gold {
+            color: var(--color-gold);
+        }
+        .border-gold {
+            border-color: var(--color-gold);
+        }
+        .btn-gold {
+            background-color: var(--color-gold);
+            color: #0d0d0d;
+            transition: all 0.3s;
+        }
+        .btn-gold:hover {
+            background-color: #E0C16E;
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <!-- Message Container (for displayMessage utility from cart.js) -->
+    <div id="message-container"></div>
+
+    <!-- Navigation Bar -->
+    <header class="shadow-lg bg-[#1a1a1a] sticky top-0 z-10">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <a href="index.html" class="text-2xl font-bold text-gold tracking-widest">SOVEREIGN HOME</a>
+            <nav class="flex space-x-6 items-center">
+                <a href="index.html" class="hover:text-gold transition-colors duration-200 font-medium">Shop</a>
+                <a href="auth.html" class="hover:text-gold transition-colors duration-200 font-medium">Account</a>
+                <a href="cart.html" class="text-gold border border-gold px-3 py-1 rounded-full hover:bg-gold hover:text-black transition-all duration-300 flex items-center space-x-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M3 1a1 1 0 000 2h1.22l.305 1.258A4 4 0 007 9h10a1 1 0 00.894-1.447l-4-8a1 1 0 00-1.788.894L15.361 8H7a1 1 0 00-.78.375l-.312.417C6.182 9.47 5 10 5 10v1a2 2 0 104 0v-1h2v1a2 2 0 104 0v-1a1 1 0 00.5-.866l3-6A1 1 0 0017 3H6.257L5.757 1H3zm13 14a2 2 0 11-4 0 2 2 0 014 0zm-8 0a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <span class="hidden sm:inline">Cart</span>
+                    <!-- Cart Item Count (optional: would be dynamically updated by cart.js) -->
+                </a>
+            </nav>
+        </div>
+    </header>
+    
+    <!-- Main Content Area -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Hero Section -->
+        <section class="mb-12 text-center py-10 bg-[#161616] rounded-xl shadow-2xl">
+            <h1 class="text-5xl md:text-6xl font-light mb-4 tracking-wider">A Sanctuary of Scent & Softness</h1>
+            <p class="text-xl text-gray-400 mb-8 max-w-2xl mx-auto">Discover the perfect blend of luxury pillows and artisanal candles, crafted to transform your house into a sovereign home.</p>
+            <a href="#product-listings" class="inline-block btn-gold text-lg py-3 px-8 rounded-lg font-medium shadow-xl hover:shadow-gold transition-all duration-300">
+                Shop The Collection
+            </a>
+        </section>
+
+        <!-- Product Listing -->
+        <section id="product-listings">
+            <h2 class="text-4xl font-light mb-8 text-center text-gold border-b border-gold pb-3">Our Collections</h2>
+            <!-- Product Grid -->
+            <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                <!-- Products will be dynamically inserted here -->
+            </div>
+            <!-- Loading/Error Indicator -->
+            <p id="loading-text" class="text-center mt-10 text-xl text-gray-400">Loading exquisite products...</p>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-[#1a1a1a] py-8 mt-12">
+        <div class="container mx-auto px-4 text-center text-gray-500 text-sm">
+            &copy; 2024 Sovereign Home. All rights reserved. | Luxury Goods Est. 2024
+        </div>
+    </footer>
+    
+    <!-- Load cart logic first to expose global functions and constants -->
+    <script src="cart.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const productGrid = document.getElementById('product-grid');
+            const loadingText = document.getElementById('loading-text');
+
+            /**
+             * Creates the HTML structure for a single product card.
+             * @param {object} product - The product data object.
+             * @returns {string} The HTML string for the product card.
+             */
+            const createProductCard = (product) => {
+                // Ensure image path is correct, using a placeholder on error
+                const imagePath = product.image ? `${window.BACKEND_URL}/images/${product.image}` : `https://placehold.co/400x400/1a1a1a/D4AF37?text=Image+Unavailable`;
+                
+                // Add to Cart button calls the global function from cart.js
+                // NOTE: Using .replace(/'/g, "\\'") to safely escape single quotes in product names for inline onclick
+                const addToCartButton = `
+                    <button 
+                        class="mt-4 w-full btn-gold py-2 px-4 rounded-lg font-medium text-sm transition-transform duration-200 transform hover:scale-[1.02]"
+                        onclick="window.addToCart({ 
+                            id: ${product.id}, 
+                            name: '${product.name.replace(/'/g, "\\'")}', 
+                            price: ${product.price}, 
+                            image: '${product.image}' 
+                        })"
+                    >
+                        Add to Cart
+                    </button>
+                `;
+
+                return `
+                    <div data-product-id="${product.id}" class="product-card bg-[#161616] p-4 rounded-xl shadow-lg border border-[#2a2a2a] hover:border-gold transition-all duration-300 cursor-pointer">
+                        <img 
+                            src="${imagePath}" 
+                            alt="${product.name}" 
+                            onerror="this.onerror=null;this.src='https://placehold.co/400x400/1a1a1a/D4AF37?text=Image+Error';"
+                            class="w-full h-64 object-cover rounded-lg mb-4 transform hover:scale-[1.01] transition-transform duration-300"
+                        >
+                        <h3 class="text-xl font-medium mb-1 truncate">${product.name}</h3>
+                        <p class="text-lg text-gold font-semibold mb-3">KSh ${product.price.toLocaleString()}</p>
+                        <!-- Rating: Simple mock for display -->
+                        <div class="flex items-center text-yellow-500 text-sm mb-4">
+                            ${'&#9733;'.repeat(4)}${'&#9734;'.repeat(1)} (4.0)
+                        </div>
+                        ${addToCartButton}
+                    </div>
+                `;
+            };
+
+            /**
+             * Fetches all products from the backend API.
+             */
+            const fetchProducts = async () => {
+                loadingText.textContent = "Loading exquisite products...";
+                loadingText.classList.remove('hidden');
+                productGrid.innerHTML = ''; // Clear existing content
+
+                try {
+                    // *** UPDATED: Using window.BACKEND_URL from cart.js ***
+                    const backendUrl = window.BACKEND_URL || ''; 
+                    const fetchUrl = `${backendUrl}/api/products`; 
+
+                    const response = await fetch(fetchUrl);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const products = await response.json();
+                    
+                    if (products.length === 0) {
+                        loadingText.textContent = "No products found. Please check the backend products.json file.";
+                        return;
+                    }
+
+                    renderProducts(products);
+                    addProductCardListeners();
+
+                    // Hide loading text on success
+                    loadingText.classList.add('hidden');
+
+                } catch (error) {
+                    console.error('Fetch error:', error);
+                    // Updated error message to mention the BACKEND_URL for debugging
+                    loadingText.textContent = `Error loading products: ${error.message}. Please ensure the backend is running at ${window.BACKEND_URL}`;
+                    loadingText.classList.remove('hidden');
+                }
+            };
+
+            /**
+             * Renders the product cards into the product grid.
+             * @param {Array} products - The array of product objects.
+             */
+            const renderProducts = (products) => {
+                if (!products || products.length === 0) {
+                    loadingText.textContent = "No products available.";
+                    return;
+                }
+                
+                // Map the product array to an array of HTML strings and join them
+                const cardsHTML = products.map(createProductCard).join('');
+                productGrid.innerHTML = cardsHTML;
+            };
+
+            /**
+             * Adds click listeners to each product card to simulate navigation 
+             * to a product detail page.
+             */
+            const addProductCardListeners = () => {
+                document.querySelectorAll('.product-card').forEach(card => {
+                    card.addEventListener('click', (event) => {
+                        // Prevent clicking on the 'Add to Cart' button from triggering the detail page logic
+                        if (event.target.closest('button')) {
+                            return; 
+                        }
+                        const productId = card.getAttribute('data-product-id');
+                        if (productId) {
+                            window.location.href = `product-detail.html?id=${productId}`;
+                        }
+                    });
+                });
+            };
+
+
+            // Initial call to fetch and display products
+            fetchProducts();
+        });
+    </script>
+</body>
+</html>
