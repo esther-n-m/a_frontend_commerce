@@ -32,67 +32,181 @@
             background-color: #E0C16E;
             box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
         }
+        .product-card {
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(212, 175, 55, 0.2);
+        }
+        /* Fixed message container style */
+        #message-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 50;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            max-width: 90%;
+        }
+        @media (min-width: 640px) {
+            #message-container {
+                max-width: 400px;
+            }
+        }
     </style>
+    <!-- Load shared cart logic -->
+    <script type="module" src="cart.js"></script>
 </head>
 <body>
-    <!-- Message Container (for displayMessage utility from cart.js) -->
+    <!-- Message Container (for accessibility feedback) -->
     <div id="message-container"></div>
 
     <!-- Navigation Bar -->
-    <header class="shadow-lg bg-[#1a1a1a] sticky top-0 z-10">
-        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-            <a href="index.html" class="text-2xl font-bold text-gold tracking-widest">SOVEREIGN HOME</a>
-            <nav class="flex space-x-6 items-center">
-                <a href="index.html" class="hover:text-gold transition-colors duration-200 font-medium">Shop</a>
-                <a href="auth.html" class="hover:text-gold transition-colors duration-200 font-medium">Account</a>
-                <a href="cart.html" class="text-gold border border-gold px-3 py-1 rounded-full hover:bg-gold hover:text-black transition-all duration-300 flex items-center space-x-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M3 1a1 1 0 000 2h1.22l.305 1.258A4 4 0 007 9h10a1 1 0 00.894-1.447l-4-8a1 1 0 00-1.788.894L15.361 8H7a1 1 0 00-.78.375l-.312.417C6.182 9.47 5 10 5 10v1a2 2 0 104 0v-1h2v1a2 2 0 104 0v-1a1 1 0 00.5-.866l3-6A1 1 0 0017 3H6.257L5.757 1H3zm13 14a2 2 0 11-4 0 2 2 0 014 0zm-8 0a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                    <span class="hidden sm:inline">Cart</span>
-                    <!-- Cart Item Count (optional: would be dynamically updated by cart.js) -->
+    <header class="shadow-lg sticky top-0 z-10 bg-[#0d0d0d]/95 backdrop-blur-sm">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <!-- Logo/Site Name -->
+                <a href="index.html" class="text-2xl font-bold text-gold tracking-widest uppercase">
+                    Sovereign
                 </a>
-            </nav>
+
+                <!-- Desktop Links -->
+                <div class="hidden md:flex space-x-8">
+                    <a href="index.html" class="text-sm font-medium text-white hover:text-gold transition duration-150">Shop</a>
+                    <a href="product-detail.html?id=1" class="text-sm font-medium text-white hover:text-gold transition duration-150">New Arrivals</a>
+                    <a href="auth.html" class="text-sm font-medium text-white hover:text-gold transition duration-150">Account</a>
+                </div>
+
+                <!-- Mobile Menu Button & Cart Icon -->
+                <div class="flex items-center space-x-4">
+                    <!-- Mobile Menu Button (Fix: Added aria-label for accessibility) -->
+                    <button class="md:hidden text-gray-500 hover:text-gold" aria-label="Open menu">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                    </button>
+                    <!-- Cart Icon -->
+                    <a href="cart.html" class="text-gray-500 hover:text-gold relative" aria-label="View shopping cart">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        <span id="cart-count" class="absolute -top-1 -right-1.5 w-4 h-4 text-xs font-medium bg-gold text-[#0d0d0d] rounded-full flex items-center justify-center">0</span>
+                    </a>
+                </div>
+            </div>
+        </nav>
+        <!-- Mobile Menu Placeholder (Hidden by default, shown by JS) -->
+        <div id="mobile-menu" class="md:hidden hidden bg-[#141414] border-t border-gray-800">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="index.html" class="block px-3 py-2 rounded-md text-base font-medium text-gold bg-gray-900">Shop</a>
+                <a href="product-detail.html?id=1" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-gray-700">New Arrivals</a>
+                <a href="auth.html" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-gray-700">Account</a>
+            </div>
         </div>
     </header>
-    
-    <!-- Main Content Area -->
-    <main class="container mx-auto px-4 py-8">
-        <!-- Hero Section -->
-        <section class="mb-12 text-center py-10 bg-[#161616] rounded-xl shadow-2xl">
-            <h1 class="text-5xl md:text-6xl font-light mb-4 tracking-wider">A Sanctuary of Scent & Softness</h1>
-            <p class="text-xl text-gray-400 mb-8 max-w-2xl mx-auto">Discover the perfect blend of luxury pillows and artisanal candles, crafted to transform your house into a sovereign home.</p>
-            <a href="#product-listings" class="inline-block btn-gold text-lg py-3 px-8 rounded-lg font-medium shadow-xl hover:shadow-gold transition-all duration-300">
-                Shop The Collection
+
+    <!-- Main Content: Hero Section -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <section class="text-center py-16 bg-[#141414] rounded-xl shadow-2xl border border-gray-800 mb-16">
+            <h1 class="text-5xl md:text-7xl font-bold mb-4 tracking-tight leading-tight">
+                The Art of <span class="text-gold">Refined Living</span>
+            </h1>
+            <p class="text-lg text-gray-400 max-w-3xl mx-auto mb-8">
+                Indulge in our exclusive collection of luxury pillows and hand-poured, artisanal candles. Elevate your sanctuary.
+            </p>
+            <a href="#product-grid-section" class="inline-block btn-gold px-8 py-3 rounded-full text-base font-semibold shadow-xl hover:shadow-gold/50 transition transform hover:scale-[1.02]">
+                Explore Collection
             </a>
         </section>
 
-        <!-- Product Listing -->
-        <section id="product-listings">
-            <h2 class="text-4xl font-light mb-8 text-center text-gold border-b border-gold pb-3">Our Collections</h2>
-            <!-- Product Grid -->
+        <!-- Product Grid Section -->
+        <section id="product-grid-section" class="pt-10">
+            <h2 class="text-3xl font-bold text-center mb-12 uppercase tracking-wider">Our Curated Selections</h2>
             <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                <!-- Products will be dynamically inserted here -->
+                <!-- Product Cards will be injected here by JavaScript -->
             </div>
-            <!-- Loading/Error Indicator -->
-            <p id="loading-text" class="text-center mt-10 text-xl text-gray-400">Loading exquisite products...</p>
+            <!-- Loading/Error Message -->
+            <p id="loading-message" class="text-center text-gray-500 mt-10">Loading products...</p>
         </section>
     </main>
 
     <!-- Footer -->
-    <footer class="bg-[#1a1a1a] py-8 mt-12">
-        <div class="container mx-auto px-4 text-center text-gray-500 text-sm">
-            &copy; 2024 Sovereign Home. All rights reserved. | Luxury Goods Est. 2024
+    <footer class="bg-[#141414] border-t border-gray-800 mt-12">
+        <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 text-center text-gray-400 text-sm">
+            &copy; 2024 Sovereign Home. All rights reserved. | Luxury eCommerce Demo
         </div>
     </footer>
-    
-    <!-- Load cart logic first to expose global functions and constants -->
-    <script src="cart.js"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const productGrid = document.getElementById('product-grid');
-            const loadingText = document.getElementById('loading-text');
+            const loadingMessage = document.getElementById('loading-message');
+            const mobileMenuBtn = document.querySelector('nav button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            
+            const cartCountElement = document.getElementById('cart-count');
+
+            // --- Cart Utilities (Relies on cart.js) ---
+            const updateCartCount = () => {
+                // Check if getCart is available (from cart.js)
+                if (typeof window.getCart === 'function') {
+                    const cart = window.getCart();
+                    const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+                    cartCountElement.textContent = totalItems;
+                }
+            };
+            window.updateCartCount = updateCartCount; // Expose globally for other files
+            updateCartCount(); // Initial load
+
+            // --- Navigation & Mobile Menu ---
+            mobileMenuBtn.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+                // Toggle the aria-label for accessibility (optional but good practice)
+                const isExpanded = mobileMenu.classList.contains('hidden');
+                mobileMenuBtn.setAttribute('aria-expanded', !isExpanded);
+                mobileMenuBtn.setAttribute('aria-label', isExpanded ? 'Open menu' : 'Close menu');
+            });
+
+
+            // --- Product Data Mock/Fetch ---
+            const products = [
+                { id: 1, name: "Regal Velvet Pillow", category: "Pillows", price: 89.99, description: "A deeply plush velvet pillow offering unparalleled comfort.", image: "https://placehold.co/600x400/1e293b/d4af37?text=Velvet+Pillow" },
+                { id: 2, name: "Midnight Musk Candle", category: "Candles", price: 49.99, description: "A sophisticated blend of sandalwood, amber, and deep musk.", image: "https://placehold.co/600x400/222222/d4af37?text=Musk+Candle" },
+                { id: 3, name: "Silk Dream Pillow", category: "Pillows", price: 129.99, description: "Hypoallergenic silk case with a feather-light filling.", image: "https://placehold.co/600x400/4a4a4a/d4af37?text=Silk+Pillow" },
+                { id: 4, name: "Bergamot Bliss Candle", category: "Candles", price: 44.99, description: "A light, refreshing citrus and floral scent for clarity.", image: "https://placehold.co/600x400/3c3c3c/d4af37?text=Bergamot+Candle" },
+                { id: 5, name: "Luxe Linen Pillow", category: "Pillows", price: 79.99, description: "Breathable, stonewashed linen for a relaxed, elegant look.", image: "https://placehold.co/600x400/555555/d4af37?text=Linen+Pillow" },
+                { id: 6, name: "Spiced Teak Candle", category: "Candles", price: 54.99, description: "Warm teakwood, cinnamon, and a hint of vanilla for a cozy evening.", image: "https://placehold.co/600x400/666666/d4af37?text=Teak+Candle" },
+                { id: 7, name: "Monogram Pillow", category: "Pillows", price: 99.99, description: "Custom embroidered cotton pillow, personalized for you.", image: "https://placehold.co/600x400/777777/d4af37?text=Monogram+Pillow" },
+                { id: 8, name: "Ocean Breeze Candle", category: "Candles", price: 49.99, description: "Crisp, clean scent of sea salt and aquatic florals.", image: "https://placehold.co/600x400/888888/d4af37?text=Ocean+Candle" }
+            ];
+
+            // Mock backend API URL
+            const BACKEND_URL = "http://localhost:5000";
+
+            /**
+             * Mock Fetch Function (since we don't have a live server)
+             * Simulates fetching product data with a delay.
+             */
+            const fetchProducts = async () => {
+                loadingMessage.textContent = 'Loading products...';
+                try {
+                    // Simulate API call delay
+                    await new Promise(resolve => setTimeout(resolve, 500)); 
+
+                    // In a real app, this would be:
+                    // const response = await fetch(`${BACKEND_URL}/api/products`);
+                    // const products = await response.json();
+
+                    // Display products and hide loader
+                    renderProducts(products);
+                    loadingMessage.classList.add('hidden');
+                    addProductCardListeners();
+
+                } catch (error) {
+                    console.error("Failed to fetch products:", error);
+                    loadingMessage.textContent = 'Failed to load products. Please try again later.';
+                    loadingMessage.classList.remove('hidden');
+                }
+            };
 
             /**
              * Creates the HTML structure for a single product card.
@@ -100,91 +214,39 @@
              * @returns {string} The HTML string for the product card.
              */
             const createProductCard = (product) => {
-                // Ensure image path is correct, using a placeholder on error
-                const imagePath = product.image ? `${window.BACKEND_URL}/images/${product.image}` : `https://placehold.co/400x400/1a1a1a/D4AF37?text=Image+Unavailable`;
-                
-                // Add to Cart button calls the global function from cart.js
-                // NOTE: Using .replace(/'/g, "\\'") to safely escape single quotes in product names for inline onclick
-                const addToCartButton = `
-                    <button 
-                        class="mt-4 w-full btn-gold py-2 px-4 rounded-lg font-medium text-sm transition-transform duration-200 transform hover:scale-[1.02]"
-                        onclick="window.addToCart({ 
-                            id: ${product.id}, 
-                            name: '${product.name.replace(/'/g, "\\'")}', 
-                            price: ${product.price}, 
-                            image: '${product.image}' 
-                        })"
-                    >
-                        Add to Cart
-                    </button>
-                `;
-
                 return `
-                    <div data-product-id="${product.id}" class="product-card bg-[#161616] p-4 rounded-xl shadow-lg border border-[#2a2a2a] hover:border-gold transition-all duration-300 cursor-pointer">
+                    <div data-product-id="${product.id}" class="product-card bg-[#1a1a1a] rounded-xl overflow-hidden shadow-lg border border-gray-800">
                         <img 
-                            src="${imagePath}" 
+                            src="${product.image}" 
                             alt="${product.name}" 
-                            onerror="this.onerror=null;this.src='https://placehold.co/400x400/1a1a1a/D4AF37?text=Image+Error';"
-                            class="w-full h-64 object-cover rounded-lg mb-4 transform hover:scale-[1.01] transition-transform duration-300"
+                            class="w-full h-48 object-cover object-center"
+                            onerror="this.onerror=null;this.src='https://placehold.co/600x400/0d0d0d/f5f5f5?text=Sovereign';"
                         >
-                        <h3 class="text-xl font-medium mb-1 truncate">${product.name}</h3>
-                        <p class="text-lg text-gold font-semibold mb-3">KSh ${product.price.toLocaleString()}</p>
-                        <!-- Rating: Simple mock for display -->
-                        <div class="flex items-center text-yellow-500 text-sm mb-4">
-                            ${'&#9733;'.repeat(4)}${'&#9734;'.repeat(1)} (4.0)
+                        <div class="p-6">
+                            <span class="text-xs font-medium text-gold uppercase tracking-widest">${product.category}</span>
+                            <h3 class="text-xl font-semibold mt-2 mb-3 text-white truncate">${product.name}</h3>
+                            <p class="text-gray-400 text-sm h-10 overflow-hidden">${product.description}</p>
+                            <div class="flex justify-between items-center mt-4">
+                                <span class="text-xl font-bold text-white">$${product.price.toFixed(2)}</span>
+                                <button data-product-id="${product.id}" data-product-name="${product.name}" data-product-price="${product.price}" data-product-image="${product.image}"
+                                    class="add-to-cart-btn btn-gold text-sm font-medium px-4 py-2 rounded-full transform transition duration-150 hover:scale-[1.05]"
+                                    aria-label="Add ${product.name} to cart"
+                                >
+                                    Add to Cart
+                                </button>
+                            </div>
                         </div>
-                        ${addToCartButton}
                     </div>
                 `;
             };
 
             /**
-             * Fetches all products from the backend API.
-             */
-            const fetchProducts = async () => {
-                loadingText.textContent = "Loading exquisite products...";
-                loadingText.classList.remove('hidden');
-                productGrid.innerHTML = ''; // Clear existing content
-
-                try {
-                    // *** UPDATED: Using window.BACKEND_URL from cart.js ***
-                    const backendUrl = window.BACKEND_URL || ''; 
-                    const fetchUrl = `${backendUrl}/api/products`; 
-
-                    const response = await fetch(fetchUrl);
-                    
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-
-                    const products = await response.json();
-                    
-                    if (products.length === 0) {
-                        loadingText.textContent = "No products found. Please check the backend products.json file.";
-                        return;
-                    }
-
-                    renderProducts(products);
-                    addProductCardListeners();
-
-                    // Hide loading text on success
-                    loadingText.classList.add('hidden');
-
-                } catch (error) {
-                    console.error('Fetch error:', error);
-                    // Updated error message to mention the BACKEND_URL for debugging
-                    loadingText.textContent = `Error loading products: ${error.message}. Please ensure the backend is running at ${window.BACKEND_URL}`;
-                    loadingText.classList.remove('hidden');
-                }
-            };
-
-            /**
-             * Renders the product cards into the product grid.
+             * Renders the list of products into the main grid.
              * @param {Array} products - The array of product objects.
              */
             const renderProducts = (products) => {
-                if (!products || products.length === 0) {
-                    loadingText.textContent = "No products available.";
+                if (products.length === 0) {
+                    productGrid.innerHTML = '<p class="col-span-full text-center text-gray-500">No products found.</p>';
                     return;
                 }
                 
@@ -195,17 +257,36 @@
 
             /**
              * Adds click listeners to each product card to simulate navigation 
-             * to a product detail page.
+             * to a product detail page (which we will build next!).
              */
             const addProductCardListeners = () => {
                 document.querySelectorAll('.product-card').forEach(card => {
                     card.addEventListener('click', (event) => {
                         // Prevent clicking on the 'Add to Cart' button from triggering the detail page logic
-                        if (event.target.closest('button')) {
+                        if (event.target.closest('.add-to-cart-btn')) {
+                            const btn = event.target.closest('.add-to-cart-btn');
+                            const item = {
+                                id: parseInt(btn.getAttribute('data-product-id')),
+                                name: btn.getAttribute('data-product-name'),
+                                price: parseFloat(btn.getAttribute('data-product-price')),
+                                image: btn.getAttribute('data-product-image')
+                            };
+
+                            // Add to cart with default options (since this is an index page)
+                            // We need to check if addToCart is available from cart.js
+                            if (typeof window.addToCart === 'function') {
+                                window.addToCart(item);
+                                window.updateCartCount();
+                            } else {
+                                console.error('cart.js not loaded correctly.');
+                            }
+
                             return; 
                         }
+                        
                         const productId = card.getAttribute('data-product-id');
                         if (productId) {
+                            // This line simulates navigating to a product detail page
                             window.location.href = `product-detail.html?id=${productId}`;
                         }
                     });

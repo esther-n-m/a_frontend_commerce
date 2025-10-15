@@ -36,292 +36,186 @@
         .bg-gold {
             background-color: var(--color-gold);
         }
-        .focus\:ring-gold:focus {
-            --tw-ring-opacity: 1;
-            --tw-ring-color: var(--color-gold);
-        }
         .btn-gold {
             background-color: var(--color-gold);
             color: #0d0d0d;
             transition: all 0.3s;
-            display: flex; /* Make button content align correctly */
-            align-items: center;
-            justify-content: center;
         }
         .btn-gold:hover {
             background-color: #E0C16E;
             box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
         }
-        .btn-gold:disabled {
-            /* Better visual indicator for disabled state */
-            background-color: #d4af3780; /* Gold with reduced opacity */
-            cursor: not-allowed;
-            box-shadow: none;
-        }
-        .tab-active {
-            border-bottom: 2px solid var(--color-gold);
-            color: var(--color-gold);
+        .form-container {
+            width: 100%;
+            max-width: 400px;
         }
         .spinner {
             display: inline-block;
-            width: 1.25rem;
-            height: 1.25rem;
-            border: 3px solid rgba(13, 13, 13, 0.3); /* Dark border */
-            border-top-color: #0d0d0d; /* Dark fill */
-            border-radius: 50%;
             animation: spin 1s linear infinite;
+        }
+        .message-box {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 50;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            max-width: 90vw;
+        }
+        .message-box.show {
+            opacity: 1;
         }
     </style>
 </head>
 <body>
+    <!-- Message Box Container -->
+    <div id="message-container" class="message-box"></div>
 
-    <!-- Authentication Card -->
-    <div class="w-full max-w-lg bg-[#1a1a1a] p-8 md:p-12 rounded-2xl shadow-2xl shadow-black/50 border border-[#282828]">
-        <h1 class="text-4xl font-light text-center uppercase tracking-widest text-gold mb-8">
-            Account Access
-        </h1>
-
-        <!-- Tab Controls (Switch between Login and Register) -->
-        <div class="flex border-b border-gray-700 mb-8">
-            <button id="login-tab" class="flex-1 py-3 text-lg font-medium tracking-wider tab-active transition duration-300" onclick="showForm('login')">
-                SIGN IN
-            </button>
-            <button id="register-tab" class="flex-1 py-3 text-lg font-medium tracking-wider text-gray-400 hover:text-gold transition duration-300" onclick="showForm('register')">
-                REGISTER
-            </button>
+    <div class="form-container bg-neutral-900 p-8 md:p-10 rounded-xl shadow-2xl border border-neutral-800 space-y-8">
+        
+        <div class="flex space-x-4 border-b border-neutral-700 pb-4">
+            <button id="show-login" class="text-xl font-semibold transition duration-200 text-gold border-b-2 border-gold pb-2">Sign In</button>
+            <button id="show-register" class="text-xl font-semibold transition duration-200 text-gray-500 hover:text-gold pb-2">Register</button>
         </div>
 
-        <!-- Message Box -->
-        <div id="message-box" class="p-4 rounded-lg mb-6 hidden text-sm font-medium" role="alert"></div>
-
         <!-- Login Form -->
-        <form id="login-form" class="space-y-6" onsubmit="handleLogin(event)">
+        <form id="login-form" class="space-y-6">
+            <h2 id="login-text" class="text-2xl font-bold text-center">Sign In to Your Account</h2>
+
             <div>
-                <label for="login-email" class="block text-sm font-medium text-gray-300 mb-1">Email Address</label>
-                <input type="email" id="login-email" name="email" required 
-                        class="w-full p-3 bg-[#0d0d0d] border border-gray-700 rounded-lg focus:border-gold focus:ring focus:ring-gold/30 outline-none text-white transition duration-200">
+                <label for="login-email" class="block text-sm font-medium text-gray-400 mb-1">Email</label>
+                <input type="email" id="login-email" required class="w-full px-4 py-3 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-gray-500 focus:ring-gold focus:border-gold transition duration-150">
             </div>
+            
             <div>
-                <label for="login-password" class="block text-sm font-medium text-gray-300 mb-1">Password</label>
-                <input type="password" id="login-password" name="password" required 
-                        class="w-full p-3 bg-[#0d0d0d] border border-gray-700 rounded-lg focus:border-gold focus:ring focus:ring-gold/30 outline-none text-white transition duration-200">
+                <label for="login-password" class="block text-sm font-medium text-gray-400 mb-1">Password</label>
+                <input type="password" id="login-password" required class="w-full px-4 py-3 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-gray-500 focus:ring-gold focus:border-gold transition duration-150">
             </div>
-            <!-- Login Button with Spinner -->
-            <button type="submit" id="login-button" class="btn-gold w-full py-3 text-base font-semibold tracking-wider rounded-lg shadow-md mt-6 opacity-50 cursor-not-allowed" disabled>
-                <span id="login-spinner" class="spinner hidden mr-2"></span>
-                <span id="login-text">Sign In to Your Account</span>
+
+            <button type="submit" id="login-button" class="w-full btn-gold py-3 rounded-lg font-semibold text-lg shadow-lg flex items-center justify-center space-x-2" disabled>
+                <span>Sign In</span>
+                <div id="login-spinner" class="spinner h-5 w-5 border-2 border-t-2 border-t-black rounded-full hidden"></div>
             </button>
         </form>
 
         <!-- Register Form -->
-        <form id="register-form" class="space-y-6 hidden" onsubmit="handleRegister(event)">
+        <form id="register-form" class="space-y-6 hidden">
+            <h2 id="register-text" class="text-2xl font-bold text-center">Create a New Account</h2>
+
             <div>
-                <label for="register-name" class="block text-sm font-medium text-gray-300 mb-1">Full Name</label>
-                <input type="text" id="register-name" name="name" required 
-                        class="w-full p-3 bg-[#0d0d0d] border border-gray-700 rounded-lg focus:border-gold focus:ring focus:ring-gold/30 outline-none text-white transition duration-200">
+                <label for="register-name" class="block text-sm font-medium text-gray-400 mb-1">Name</label>
+                <input type="text" id="register-name" required class="w-full px-4 py-3 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-gray-500 focus:ring-gold focus:border-gold transition duration-150">
             </div>
+
             <div>
-                <label for="register-email" class="block text-sm font-medium text-gray-300 mb-1">Email Address</label>
-                <input type="email" id="register-email" name="email" required 
-                        class="w-full p-3 bg-[#0d0d0d] border border-gray-700 rounded-lg focus:border-gold focus:ring focus:ring-gold/30 outline-none text-white transition duration-200">
+                <label for="register-email" class="block text-sm font-medium text-gray-400 mb-1">Email</label>
+                <input type="email" id="register-email" required class="w-full px-4 py-3 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-gray-500 focus:ring-gold focus:border-gold transition duration-150">
             </div>
+            
             <div>
-                <label for="register-password" class="block text-sm font-medium text-gray-300 mb-1">Password</label>
-                <input type="password" id="register-password" name="password" required 
-                        class="w-full p-3 bg-[#0d0d0d] border border-gray-700 rounded-lg focus:border-gold focus:ring focus:ring-gold/30 outline-none text-white transition duration-200">
+                <label for="register-password" class="block text-sm font-medium text-gray-400 mb-1">Password (Min 6 chars)</label>
+                <input type="password" id="register-password" required minlength="6" class="w-full px-4 py-3 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-gray-500 focus:ring-gold focus:border-gold transition duration-150">
             </div>
-            <!-- Register Button with Spinner -->
-            <button type="submit" id="register-button" class="btn-gold w-full py-3 text-base font-semibold tracking-wider rounded-lg shadow-md mt-6 opacity-50 cursor-not-allowed" disabled>
-                <span id="register-spinner" class="spinner hidden mr-2"></span>
-                <span id="register-text">Create New Account</span>
+
+            <button type="submit" id="register-button" class="w-full btn-gold py-3 rounded-lg font-semibold text-lg shadow-lg flex items-center justify-center space-x-2" disabled>
+                <span>Register</span>
+                <div id="register-spinner" class="spinner h-5 w-5 border-2 border-t-2 border-t-black rounded-full hidden"></div>
             </button>
         </form>
+
+        <p class="text-center text-sm text-gray-500 pt-4">Your sovereign path to luxury starts here.</p>
+
     </div>
 
+    <!-- Script Block -->
     <script>
-        // NOTE: The BASE_URL is set here to match your Express server's address.
-        const BASE_URL = 'http://localhost:5000'; 
-        
-        const messageBox = document.getElementById('message-box');
-        const loginForm = document.getElementById('login-form');
-        const registerForm = document.getElementById('register-form');
-        const loginTab = document.getElementById('login-tab');
-        const registerTab = document.getElementById('register-tab');
-        
-        const loginButton = document.getElementById('login-button');
-        const registerButton = document.getElementById('register-button');
+        // Use an empty string if running on the same domain/port
+        const BASE_URL = ''; 
 
-        const loginText = document.getElementById('login-text');
-        const loginSpinner = document.getElementById('login-spinner');
-        const registerText = document.getElementById('register-text');
-        const registerSpinner = document.getElementById('register-spinner');
-
-
-        // --- Utility Functions ---
+        // --- Utility UI Functions ---
 
         /**
-         * Displays a transient message to the user.
-         * @param {string} message - The message text.
-         * @param {string} type - 'success', 'error', or 'info'.
+         * Global function to display a temporary message.
+         * @param {string} message 
+         * @param {string} type - 'success' or 'error'
          */
-        const displayMessage = (message, type) => {
-            messageBox.textContent = message;
-            messageBox.classList.remove('hidden', 'bg-red-800/20', 'text-red-300', 'bg-green-800/20', 'text-green-300', 'bg-blue-800/20', 'text-blue-300');
+        const displayMessage = (message, type = 'info') => {
+            const container = document.getElementById('message-container');
+            if (!container) return;
 
-            if (type === 'error') {
-                messageBox.classList.add('bg-red-800/20', 'text-red-300');
-            } else if (type === 'success') {
-                messageBox.classList.add('bg-green-800/20', 'text-green-300');
-            } else if (type === 'info') {
-                 messageBox.classList.add('bg-blue-800/20', 'text-blue-300');
+            let classes = "message-box show p-4 rounded-lg shadow-xl text-white font-medium ";
+            switch (type) {
+                case 'success': classes += 'bg-green-600'; break;
+                case 'error': classes += 'bg-red-600'; break;
+                case 'info': default: classes += 'bg-blue-600'; break;
             }
 
-            // Show the message
-            messageBox.classList.remove('hidden');
+            container.className = classes;
+            container.textContent = message;
 
-            // Hide the message after 5 seconds
             setTimeout(() => {
-                messageBox.classList.add('hidden');
+                container.classList.remove('show');
             }, 5000);
         };
+        window.displayMessage = displayMessage; // Expose globally if needed by other files
 
-        /**
-         * Simple input validation (just checks if fields are empty)
-         * @param {Array<HTMLInputElement>} fields 
-         * @returns {boolean}
-         */
-        const validateForm = (fields) => {
-            for (const field of fields) {
-                if (!field.value.trim()) {
-                    return false;
-                }
-            }
-            return true;
-        };
+        // --- DOM Elements ---
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+        const loginButton = document.getElementById('login-button');
+        const registerButton = document.getElementById('register-button');
+        const loginSpinner = document.getElementById('login-spinner');
+        const registerSpinner = document.getElementById('register-spinner');
+        const loginText = document.getElementById('login-text');
+        const registerText = document.getElementById('register-text');
 
-        /**
-         * Enables/Disables a form button based on input validity.
-         * @param {string} formId - 'login' or 'register'
-         */
-        const updateButtonState = (formId) => {
-            const form = formId === 'login' ? loginForm : registerForm;
-            const button = formId === 'login' ? loginButton : registerButton;
-            
-            // Collect all required inputs in the currently visible form
-            const inputs = Array.from(form.querySelectorAll('input[required]'));
-            
-            if (validateForm(inputs)) {
-                button.disabled = false;
-                button.classList.remove('opacity-50', 'cursor-not-allowed');
-            } else {
-                button.disabled = true;
-                button.classList.add('opacity-50', 'cursor-not-allowed');
-            }
-        };
+        const showLoginBtn = document.getElementById('show-login');
+        const showRegisterBtn = document.getElementById('show-register');
 
-        // Add event listeners to update button state on input
-        loginForm.addEventListener('input', () => updateButtonState('login'));
-        registerForm.addEventListener('input', () => updateButtonState('register'));
-        
-        // Initial state check
-        document.addEventListener('DOMContentLoaded', () => {
-            updateButtonState('login'); 
-            updateButtonState('register'); 
-        });
 
-        // --- Tab Switching Logic ---
+        // --- Form Management ---
 
-        /**
-         * Switches between the Login and Register forms.
-         * @param {string} formName - 'login' or 'register'
-         */
-        const showForm = (formName) => {
-            // Remove active state from both
-            loginTab.classList.remove('tab-active');
-            registerTab.classList.remove('tab-active');
-            loginTab.classList.add('text-gray-400');
-            registerTab.classList.add('text-gray-400');
-
-            // Toggle form visibility
-            if (formName === 'login') {
+        const showForm = (formType) => {
+            if (formType === 'login') {
                 loginForm.classList.remove('hidden');
                 registerForm.classList.add('hidden');
-                loginTab.classList.add('tab-active');
-                loginTab.classList.remove('text-gray-400');
+                showLoginBtn.classList.add('text-gold', 'border-gold');
+                showLoginBtn.classList.remove('text-gray-500');
+                showRegisterBtn.classList.remove('text-gold', 'border-gold');
+                showRegisterBtn.classList.add('text-gray-500');
             } else {
                 loginForm.classList.add('hidden');
                 registerForm.classList.remove('hidden');
-                registerTab.classList.add('tab-active');
-                registerTab.classList.remove('text-gray-400');
+                showRegisterBtn.classList.add('text-gold', 'border-gold');
+                showRegisterBtn.classList.remove('text-gray-500');
+                showLoginBtn.classList.remove('text-gold', 'border-gold');
+                showLoginBtn.classList.add('text-gray-500');
             }
-            messageBox.classList.add('hidden'); // Clear messages on tab switch
-            
-            // Re-run validation for the newly visible form
-            updateButtonState(formName);
         };
 
-        // --- API Submission Functions ---
-
-        /**
-         * Handles the form submission for user registration.
-         * @param {Event} event 
-         */
-        const handleRegister = async (event) => {
-            event.preventDefault();
-            
-            const name = document.getElementById('register-name').value;
-            const email = document.getElementById('register-email').value;
-            const password = document.getElementById('register-password').value;
-
-            // Set loading state
-            registerText.textContent = 'Processing...';
-            registerSpinner.classList.remove('hidden');
-            registerButton.disabled = true;
-            
-            try {
-                const response = await fetch(`${BASE_URL}/api/users/register`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ name, email, password }),
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    displayMessage(`Success! Welcome, ${data.user.name}. Please sign in.`, 'success');
-                    registerForm.reset();
-                    // Switch to login tab after successful registration
-                    showForm('login');
-                } else {
-                    displayMessage(`Registration Failed: ${data.message || 'Server error.'}`, 'error');
-                }
-
-            } catch (error) {
-                console.error('Registration API Error:', error);
-                displayMessage('Network error. Could not connect to the server.', 'error');
-            } finally {
-                // Reset loading state
-                registerText.textContent = 'Create New Account';
-                registerSpinner.classList.add('hidden');
-                updateButtonState('register'); 
+        const updateButtonState = (formType) => {
+            if (formType === 'login') {
+                const email = document.getElementById('login-email').value;
+                const password = document.getElementById('login-password').value;
+                loginButton.disabled = !(email && password);
+            } else {
+                const name = document.getElementById('register-name').value;
+                const email = document.getElementById('register-email').value;
+                const password = document.getElementById('register-password').value;
+                registerButton.disabled = !(name && email && password && password.length >= 6);
             }
         };
 
 
-        /**
-         * Handles the form submission for user login.
-         * @param {Event} event 
-         */
-        const handleLogin = async (event) => {
-            event.preventDefault();
-            
+        // --- API Handlers ---
+
+        const handleLogin = async (e) => {
+            e.preventDefault();
+
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
 
-            // Set loading state
-            loginText.textContent = 'Authenticating...';
+            loginText.textContent = 'Signing In...';
             loginSpinner.classList.remove('hidden');
             loginButton.disabled = true;
 
@@ -337,9 +231,15 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    displayMessage(`Login successful! Welcome back. Token: ${data.token.substring(0, 10)}...`, 'success');
-                    // In a real app, this token would be saved and the user redirected.
-                    loginForm.reset();
+                    // *** CRITICAL UPDATE: SAVE THE TOKEN ***
+                    localStorage.setItem('userToken', data.token); 
+                    
+                    displayMessage(`Login successful! Redirecting...`, 'success');
+                    
+                    // Redirect to the main shop page
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1000); 
                     
                 } else {
                     displayMessage(`Login Failed: ${data.message || 'Invalid email or password.'}`, 'error');
@@ -356,8 +256,79 @@
             }
         };
 
-        // Initialize view to the login form
-        showForm('login');
+        const handleRegister = async (e) => {
+            e.preventDefault();
+
+            const name = document.getElementById('register-name').value;
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+
+            registerText.textContent = 'Creating Account...';
+            registerSpinner.classList.remove('hidden');
+            registerButton.disabled = true;
+
+            try {
+                const response = await fetch(`${BASE_URL}/api/users/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ name, email, password }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                     // *** CRITICAL UPDATE: SAVE THE TOKEN ***
+                    localStorage.setItem('userToken', data.token);
+
+                    displayMessage(`Registration successful! Redirecting...`, 'success');
+                    
+                    // Redirect to the main shop page
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1000); 
+
+                } else {
+                    displayMessage(`Registration Failed: ${data.message || 'Error creating account.'}`, 'error');
+                }
+
+            } catch (error) {
+                console.error('Register API Error:', error);
+                displayMessage('Network error. Could not connect to the server.', 'error');
+            } finally {
+                // Reset loading state
+                registerText.textContent = 'Create a New Account';
+                registerSpinner.classList.add('hidden');
+                updateButtonState('register');
+            }
+        };
+
+
+        // --- Event Listeners and Initializer ---
+        
+        // Form submission listeners
+        loginForm.addEventListener('submit', handleLogin);
+        registerForm.addEventListener('submit', handleRegister);
+
+        // Input change listeners to enable/disable buttons
+        document.getElementById('login-email').addEventListener('input', () => updateButtonState('login'));
+        document.getElementById('login-password').addEventListener('input', () => updateButtonState('login'));
+        document.getElementById('register-name').addEventListener('input', () => updateButtonState('register'));
+        document.getElementById('register-email').addEventListener('input', () => updateButtonState('register'));
+        document.getElementById('register-password').addEventListener('input', () => updateButtonState('register'));
+
+        // Tab switch listeners
+        showLoginBtn.addEventListener('click', () => showForm('login'));
+        showRegisterBtn.addEventListener('click', () => showForm('register'));
+
+
+        // Initialize view to the login form and check initial button state
+        document.addEventListener('DOMContentLoaded', () => {
+            showForm('login');
+            updateButtonState('login');
+            updateButtonState('register');
+        });
     </script>
 </body>
 </html>

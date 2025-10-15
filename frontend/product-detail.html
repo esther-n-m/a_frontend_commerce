@@ -36,307 +36,443 @@
             background-color: #E0C16E;
             box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
         }
-        /* Utility class to visually hide elements but keep them accessible for screen readers */
-        .sr-only {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            white-space: nowrap;
-            border-width: 0;
-        }
-        /* Message container styling */
-        #message-container {
-            position: fixed;
-            top: 1rem;
-            right: 1rem;
-            z-index: 50;
-            max-width: 300px;
+        .focus\:ring-gold:focus {
+            --tw-ring-opacity: 1;
+            --tw-ring-color: var(--color-gold);
         }
     </style>
+    <!-- Import global cart logic -->
+    <script type="module" src="cart.js"></script>
+    <script>
+        // Placeholder function for cart count update, will be overwritten by cart.js
+        window.updateCartCount = () => {
+            const count = (window.getCart ? window.getCart() : []).reduce((sum, item) => sum + item.quantity, 0);
+            const cartCountElement = document.getElementById('cart-count');
+            if(cartCountElement) {
+                cartCountElement.textContent = count;
+                cartCountElement.classList.toggle('hidden', count === 0);
+            }
+        };
+    </script>
 </head>
-<body>
-    <!-- Message Container for notifications -->
-    <div id="message-container"></div>
+<body class="pt-20">
+    <!-- Message Container for Feedback (Used by cart.js:displayMessage) -->
+    <div id="message-container" class="fixed top-4 right-4 z-50 flex flex-col items-end space-y-2 max-w-sm w-full"></div>
 
-    <!-- Header & Navigation (Placeholder) -->
-    <header class="p-4 border-b border-gray-800">
-        <nav class="flex justify-between items-center max-w-7xl mx-auto">
-            <a href="index.html" class="text-2xl font-bold text-gold tracking-widest">SOVEREIGN</a>
-            <div class="flex items-center space-x-6">
-                <a href="index.html" class="text-sm hover:text-gold transition duration-200">Shop</a>
-                <a href="auth.html" class="text-sm hover:text-gold transition duration-200">Account</a>
-                <a href="cart.html" class="relative text-lg hover:text-gold transition duration-200" title="View Cart">
-                    <!-- Shopping Bag Icon (inline SVG for elegance) -->
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l-1 12H6L5 9z"></path></svg>
-                    <span id="cart-count" class="absolute -top-2 -right-2 text-xs font-bold text-black bg-gold rounded-full h-4 w-4 flex items-center justify-center">0</span>
+    <!-- Header Navigation -->
+    <header class="fixed top-0 left-0 right-0 bg-[#0d0d0d] bg-opacity-95 backdrop-blur-sm shadow-lg z-40 border-b border-gray-800">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <!-- Logo/Home Link -->
+            <a href="index.html" class="text-2xl font-bold text-gold tracking-wider uppercase">Sovereign Home</a>
+            
+            <!-- Navigation Links (Hidden on Mobile) -->
+            <div class="hidden md:flex items-center space-x-6 text-sm font-medium">
+                <a href="index.html" class="hover:text-gold transition duration-200">Shop</a>
+                <a href="auth.html" class="hover:text-gold transition duration-200">Account</a>
+                
+                <!-- Cart Link with Count -->
+                <a href="cart.html" class="relative hover:text-gold transition duration-200 p-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    <span id="cart-count" class="absolute top-0 right-0 transform translate-x-1/2 -translate-y-1/2 bg-red-600 text-xs text-white font-bold px-2 py-0.5 rounded-full hidden">0</span>
                 </a>
             </div>
+            
+            <!-- Mobile Menu Button (Hamburger) - Not Implemented for Simplicity -->
+            <button class="md:hidden text-gray-500 hover:text-gold" title="Toggle navigation menu">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+  </svg>
+</button>
+
         </nav>
     </header>
 
-    <!-- Product Detail Section -->
-    <main class="max-w-7xl mx-auto p-4 lg:p-10">
-        <section id="product-detail-container" class="grid lg:grid-cols-2 gap-10 mt-10">
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <!-- Loading State -->
+        <div id="loading-state" class="text-center py-20">
+            <svg class="animate-spin h-10 w-10 text-gold mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p id="loading-text" class="mt-4 text-gray-400">Loading product details...</p>
+        </div>
+
+        <!-- Product Detail Content (Hidden initially) -->
+        <div id="product-detail" class="hidden lg:grid lg:grid-cols-2 gap-10">
             
-            <!-- Loading State / Product Image -->
-            <div id="product-image-container" class="lg:sticky lg:top-10">
-                <p id="loading-text" class="text-lg text-center py-20">Loading product details...</p>
-                <img id="product-image" src="" alt="Product image placeholder" onerror="this.src='https://placehold.co/600x600/1a1a1a/f5f5f5?text=Image+Loading...'"
-                     class="w-full h-auto object-cover rounded-lg shadow-xl hidden">
+            <!-- Product Image -->
+            <div id="product-image-container" class="lg:sticky lg:top-24 rounded-lg overflow-hidden shadow-2xl border border-gray-800">
+                <img id="product-img" class="w-full h-auto object-cover" 
+                     src="https://placehold.co/600x600/1a1a1a/d4af37?text=Product+Image" 
+                     alt="Placeholder Image for Product"
+                     onerror="this.onerror=null;this.src='https://placehold.co/600x600/1a1a1a/d4af37?text=Image+Not+Available'">
             </div>
 
-            <!-- Product Info & Controls -->
-            <div id="product-info-container" class="hidden">
-                <h1 id="product-name" class="text-4xl lg:text-5xl font-extrabold mb-2 text-gold"></h1>
-                <p id="product-category" class="text-lg text-gray-400 mb-4 uppercase tracking-wider"></p>
-                <p id="product-price" class="text-3xl font-bold mb-6"></p>
-                
-                <hr class="border-gray-800 mb-6">
+            <!-- Product Details and Options -->
+            <div id="product-info" class="pt-4 lg:pt-0">
+                <!-- Product Metadata -->
+                <p id="product-category" class="text-sm uppercase tracking-widest text-gold mb-2"></p>
+                <h1 id="product-name" class="text-4xl lg:text-5xl font-extrabold mb-4 text-white"></h1>
+                <p id="product-price" class="text-3xl font-bold text-gold mb-6"></p>
 
-                <p id="product-description" class="text-gray-300 leading-relaxed mb-6"></p>
-
-                <!-- Product Options (Dynamically Generated) -->
-                <div id="product-options" class="space-y-6">
-                    <!-- Options (Size/Scent) will be injected here -->
+                <!-- Description -->
+                <div class="mb-8 border-t border-b border-gray-800 py-6">
+                    <p class="text-gray-300 leading-relaxed" id="product-description"></p>
                 </div>
 
-                <!-- Quantity Control -->
-                <div class="mt-8">
-                    <h3 class="text-xl font-medium mb-3">Quantity</h3>
-                    <div class="flex items-center space-x-4">
-                        <button id="decrement-qty" class="w-10 h-10 flex items-center justify-center border-2 border-gold text-gold rounded-full hover:bg-gold hover:text-black transition duration-200" title="Decrease Quantity">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path></svg>
-                        </button>
+                <!-- Product Options (Dynamically Rendered) -->
+                <div id="product-options" class="space-y-6 mb-8">
+                    <!-- Options will be inserted here -->
+                </div>
+
+                <!-- Action Section -->
+                <div class="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-6">
+                    
+                    <!-- Quantity Controls -->
+                    <div class="flex items-center space-x-3 w-full sm:w-32 border border-gray-700 rounded-lg p-2 bg-[#1a1a1a]">
+                        <!-- FIX: Added title attribute for accessibility -->
+                        <button id="decrement-qty" 
+                                class="text-xl hover:text-gold transition duration-200" 
+                                aria-label="Decrease quantity" 
+                                title="Decrease quantity">-</button>
                         
-                        <!-- ACCESSIBILITY FIX: Added visually hidden label and title attribute -->
-                        <label for="qty-display" class="sr-only">Product Quantity</label>
-                        <input type="number" id="qty-display" value="1" min="1" readonly
-                               title="Product Quantity" 
-                               class="w-16 h-10 text-center bg-transparent border-b border-gold focus:outline-none focus:border-white text-xl font-medium">
+                        <!-- FIX: Added title and placeholder attribute for accessibility/tooltips -->
+                        <input type="number" 
+                               id="qty-display" 
+                               value="1" 
+                               min="1" 
+                               class="w-full text-center bg-transparent border-none focus:ring-0 text-xl font-medium" 
+                               aria-label="Product quantity"
+                               title="Product quantity"
+                               placeholder="1"> 
                         
-                        <button id="increment-qty" class="w-10 h-10 flex items-center justify-center border-2 border-gold text-gold rounded-full hover:bg-gold hover:text-black transition duration-200" title="Increase Quantity">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                        </button>
+                        <!-- FIX: Added title attribute for accessibility -->
+                        <button id="increment-qty" 
+                                class="text-xl hover:text-gold transition duration-200" 
+                                aria-label="Increase quantity" 
+                                title="Increase quantity">+</button>
                     </div>
-                </div>
 
-                <!-- Add to Cart Button -->
-                <button id="add-to-cart-btn" 
-                        class="btn-gold w-full py-4 mt-8 rounded-lg font-bold text-lg shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled>
-                    Add to Cart
-                </button>
+                    <!-- Add to Cart Button -->
+                    <button id="add-to-cart-btn" 
+                            class="btn-gold w-full sm:w-auto px-8 py-3 rounded-xl font-semibold uppercase text-sm disabled:opacity-50 disabled:cursor-not-allowed" 
+                            disabled>
+                        Add to Cart
+                    </button>
+                </div>
+                
+                <!-- Availability/Stock Status -->
+                <p id="stock-status" class="mt-4 text-sm text-gray-500">In Stock</p>
+
             </div>
-        </section>
+        </div>
     </main>
-    
-    <!-- Footer (Placeholder) -->
-    <footer class="p-6 mt-20 border-t border-gray-800 text-center text-gray-500 text-sm">
-        <p>&copy; 2025 Sovereign Home. All rights reserved.</p>
+
+    <!-- Footer (Optional) -->
+    <footer class="mt-20 border-t border-gray-800 text-center py-6 text-sm text-gray-500">
+        <p>&copy; 2024 Sovereign Home. All rights reserved. | <a href="index.html" class="hover:text-gold">Shop</a> | <a href="cart.html" class="hover:text-gold">Cart</a></p>
     </footer>
 
-    <!-- Cart Logic Module -->
-    <script src="./cart.js"></script>
-
+    <!-- Script Block for Product Detail and Cart API Integration -->
     <script>
-        // Ensure the global functions from cart.js are available
-        const { getCart, addToCart, calculateCartTotal, updateCartCount, displayMessage, BACKEND_URL } = window;
-        
-        let productData = null; // Store the fetched product data
-        let selectedOptions = {}; // Store selected size/scent
+        const products = [
+            { id: 1, name: "Velvet Obsidian Pillow", price: 89.99, description: "A luxurious deep black velvet pillow, designed for maximum comfort and style. The perfect centerpiece for a sophisticated living space.", image: "https://placehold.co/600x600/181818/D4AF37?text=Velvet+Pillow", options: { size: ["Small", "Medium", "Large"] } },
+            { id: 2, name: "Ember Glow Candle", price: 34.50, description: "Hand-poured soy wax candle with a long, clean burn. The subtle aroma evokes feelings of warmth and ancient heritage.", image: "https://placehold.co/600x600/181818/D4AF37?text=Ember+Candle", options: { scent: ["Sandalwood & Clove", "Fig & Amber", "Smoke & Vanilla"] } },
+            { id: 3, name: "Royal Sateen Sheet Set", price: 199.00, description: "1000-thread count Egyptian cotton sateen sheets. Experience the ultimate in softness and breathability.", image: "https://placehold.co/600x600/181818/D4AF37?text=Sateen+Sheets", options: { size: ["Queen", "King"], color: ["Ivory", "Slate Gray"] } },
+            { id: 4, name: "Coastal Mist Diffuser", price: 45.00, description: "A ceramic diffuser with essential oils inspired by the morning ocean air. Naturally refreshes any room.", image: "https://placehold.co/600x600/181818/D4AF37?text=Mist+Diffuser", options: { scent: ["Bergamot & Sea Salt", "White Tea & Ginger"] } },
+            { id: 5, name: "Aged Leather Throw", price: 110.00, description: "A beautifully woven throw blanket that looks and feels like supple, aged leather. Perfect for a cozy evening.", image: "https://placehold.co/600x600/181818/D4AF37?text=Leather+Throw", options: { color: ["Dark Roast", "Charcoal", "Cream"] } }
+        ];
 
-        const loadingText = document.getElementById('loading-text');
-        const productInfoContainer = document.getElementById('product-info-container');
-        const productImage = document.getElementById('product-image');
-        const addToCartBtn = document.getElementById('add-to-cart-btn');
+        let productData = null;
+        let selectedOptions = {};
+
+        const BASE_URL = '';
+        const API_CART_URL = `${BASE_URL}/api/cart`;
+
+        // Elements
+        const loadingState = document.getElementById('loading-state');
+        const productImageSection = document.getElementById('product-image-section');
+        const productInfoSection = document.getElementById('product-info-section');
         const qtyDisplay = document.getElementById('qty-display');
-        const productOptionsContainer = document.getElementById('product-options');
+        const addToCartBtn = document.getElementById('add-to-cart-btn');
+        const optionsContainer = document.getElementById('options-container');
+
+        // --- Utility & UI Functions ---
 
         /**
-         * Parses the query parameters from the URL.
-         * @returns {object} An object of query parameters.
+         * IMPORTANT: Retrieves the JWT token. This token must be saved by auth.html.
+         * @returns {string} The JWT token.
          */
-        const getQueryParams = () => {
-            const params = {};
-            new URLSearchParams(window.location.search).forEach((value, key) => {
-                params[key] = value;
-            });
-            return params;
+        const getToken = () => {
+             // Look for the token saved during login/register
+             return localStorage.getItem('userToken') || 'MOCKED_JWT_TOKEN_FOR_TESTING';
         };
 
         /**
-         * Renders the size/scent options for the product.
-         * @param {object} product - The product data.
+         * Displays a temporary, stylish message box. (Needs to be exposed globally for other pages)
+         * @param {string} message - The message content.
+         * @param {string} type - 'success', 'error', or 'info'.
          */
-        const renderProductOptions = (product) => {
-            productOptionsContainer.innerHTML = '';
-            selectedOptions = {}; // Reset selections
+        window.displayMessage = (message, type = 'info') => {
+            const container = document.getElementById('message-container');
+            if (!container) return;
 
-            if (product.options && Object.keys(product.options).length > 0) {
-                Object.entries(product.options).forEach(([optionKey, values]) => {
-                    if (Array.isArray(values) && values.length > 0) {
-                        const optionTitle = optionKey.charAt(0).toUpperCase() + optionKey.slice(1);
-                        const optionHTML = `
-                            <div class="option-group">
-                                <h4 class="text-xl font-medium mb-3">${optionTitle}:</h4>
-                                <div class="flex flex-wrap gap-3" id="options-${optionKey}">
-                                    ${values.map(value => `
-                                        <button data-option-key="${optionKey}" data-option-value="${value}"
-                                                class="option-btn px-4 py-2 border border-gray-700 rounded-lg hover:border-gold transition duration-200">
-                                            ${value}
-                                        </button>
-                                    `).join('')}
-                                </div>
-                            </div>
-                        `;
-                        productOptionsContainer.insertAdjacentHTML('beforeend', optionHTML);
-                    }
-                });
-
-                // Add listeners for option buttons
-                document.querySelectorAll('.option-btn').forEach(button => {
-                    button.addEventListener('click', (e) => {
-                        const key = e.target.getAttribute('data-option-key');
-                        const value = e.target.getAttribute('data-option-value');
-                        
-                        // Deselect other buttons in the same group
-                        document.querySelectorAll(`#options-${key} .option-btn`).forEach(btn => {
-                            btn.classList.remove('bg-gold', 'text-black', 'font-semibold', 'border-gold');
-                            btn.classList.add('border-gray-700');
-                        });
-
-                        // Select current button
-                        e.target.classList.add('bg-gold', 'text-black', 'font-semibold', 'border-gold');
-                        e.target.classList.remove('border-gray-700');
-
-                        selectedOptions[key] = value;
-                        updateAddToCartButtonState(product);
-                    });
-                });
-            } else {
-                // If no options are required, ensure the button is enabled immediately
-                updateAddToCartButtonState(product);
+            let classes = "message-box show p-4 rounded-lg shadow-xl text-white font-medium ";
+            switch (type) {
+                case 'success': classes += 'bg-green-600'; break;
+                case 'error': classes += 'bg-red-600'; break;
+                case 'info': default: classes += 'bg-blue-600'; break;
             }
+
+            container.className = classes;
+            container.textContent = message;
+
+            setTimeout(() => {
+                container.classList.remove('show');
+            }, 3000);
         };
 
         /**
-         * Checks if all required options (size/scent) have been selected and updates button state.
-         * @param {object} product - The product data.
+         * Checks if all required options are selected and updates the Add to Cart button state.
          */
-        const updateAddToCartButtonState = (product) => {
-            let requiredOptionKeys = [];
-            if (product.options) {
-                requiredOptionKeys = Object.keys(product.options).filter(key => 
-                    Array.isArray(product.options[key]) && product.options[key].length > 0
-                );
-            }
+        const checkOptionsAndToggleCartButton = () => {
+            if (!productData || !productData.options) return;
             
-            const allOptionsSelected = requiredOptionKeys.every(key => selectedOptions[key] !== undefined);
+            const requiredOptions = Object.keys(productData.options);
+            const allSelected = requiredOptions.every(key => selectedOptions[key]);
 
-            if (requiredOptionKeys.length === 0 || allOptionsSelected) {
-                addToCartBtn.disabled = false;
-                addToCartBtn.textContent = 'Add to Cart';
+            addToCartBtn.disabled = !allSelected;
+            if (allSelected) {
+                addToCartBtn.textContent = `Add to Cart - ${formatCurrency(productData.price * parseInt(qtyDisplay.value))}`;
             } else {
-                addToCartBtn.disabled = true;
-                addToCartBtn.textContent = `Select ${requiredOptionKeys.map(k => k.charAt(0).toUpperCase() + k.slice(1)).join(' & ')} to proceed`;
+                addToCartBtn.textContent = "Select Options to Add to Cart";
             }
         };
-
-
-        /**
-         * Updates the quantity displayed and ensures it's >= 1.
-         * @param {number} delta - The change in quantity (+1 or -1).
-         */
-        const updateQuantity = (delta) => {
-            let currentQty = parseInt(qtyDisplay.value) || 1;
-            currentQty += delta;
-            if (currentQty < 1) {
-                currentQty = 1;
-            }
-            qtyDisplay.value = currentQty;
-        };
-
-        /**
-         * Fetches product details and renders the page.
-         */
-        const fetchAndRenderProduct = async () => {
-            const { id } = getQueryParams();
-
-            if (!id) {
-                loadingText.textContent = 'Error: Product ID is missing in the URL.';
-                return;
-            }
-
-            try {
-                // Fetch product details from the backend
-                const response = await fetch(`${BACKEND_URL}/api/products/${id}`);
-                const product = await response.json();
-
-                if (!response.ok || !product) {
-                    throw new Error(product.message || `Product with ID ${id} not found.`);
-                }
-
-                productData = product; // Store global product data
-
-                // Hide loading text and show content
-                loadingText.classList.add('hidden');
-                productInfoContainer.classList.remove('hidden');
-                productImage.classList.remove('hidden');
-
-                // Update UI elements
-                document.getElementById('product-name').textContent = product.name;
-                document.getElementById('product-category').textContent = product.category;
-                document.getElementById('product-price').textContent = `Ksh ${product.price.toLocaleString()}`;
-                document.getElementById('product-description').textContent = product.description;
-                
-                productImage.src = product.image;
-                productImage.alt = product.name;
-
-                // Render options and update button state
-                renderProductOptions(product);
-
-            } catch (error) {
-                console.error("Failed to fetch product:", error);
-                loadingText.textContent = `Error loading product: ${error.message}`;
-            }
-            
-            // Ensure cart count is up to date
-            updateCartCount();
-        };
-
-        // --- Event Listeners ---
         
-        document.getElementById('increment-qty').addEventListener('click', () => updateQuantity(1));
-        document.getElementById('decrement-qty').addEventListener('click', () => updateQuantity(-1));
+        /**
+         * Formats a number to a currency string.
+         * @param {number} amount
+         * @returns {string}
+         */
+        const formatCurrency = (amount) => {
+            return `$${Number(amount).toFixed(2)}`;
+        };
 
-        addToCartBtn.addEventListener('click', () => {
-            // Check button state just in case, though it should be disabled if options are missing
-            if (addToCartBtn.disabled) {
-                displayMessage("Please select all required options (Size/Scent) before adding to cart.", 'error');
-                return;
+        // --- API Calls ---
+        
+        /**
+         * Fetches the current cart from the server to get the item count for the header.
+         */
+        window.updateCartCount = async () => {
+            try {
+                const response = await fetch(API_CART_URL, {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${getToken()}` },
+                });
+
+                const cart = await response.json();
+                
+                // Calculate total quantity of items
+                const items = cart.items || [];
+                const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+                
+                const cartCountEl = document.getElementById('cart-count');
+                if (cartCountEl) {
+                    cartCountEl.textContent = totalItems;
+                }
+            } catch (e) {
+                // Ignore API error for count, as it shouldn't stop the page from loading
+                console.warn("Could not fetch cart count:", e); 
             }
+        };
 
-            const item = {
-                // Ensure to clone essential product properties
-                ...productData, 
+        /**
+         * Sends item data to the server to add or update an item in the user's cart.
+         * This replaces the old local 'addToCart' function.
+         */
+        const addToCartAPI = async () => {
+            if (!productData) return;
+
+            // 1. Create the payload for the API (must match cartController's expectation)
+            const payload = {
+                productId: productData.id,
                 quantity: parseInt(qtyDisplay.value),
-                // Add selected options as a key for uniqueness in the cart
-                options: selectedOptions
+                // Extract size and scent from the generic selectedOptions object
+                size: selectedOptions.size || null,
+                scent: selectedOptions.scent || null
+                // Note: The controller handles the uniqueness of the item
             };
 
-            // Call the global function from cart.js
-            addToCart(item);
+            addToCartBtn.disabled = true;
+            addToCartBtn.textContent = 'Adding...';
 
-            // Re-render cart count after adding
-            updateCartCount();
+            try {
+                const response = await fetch(API_CART_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${getToken()}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Server failed to add item to cart.');
+                }
+
+                window.displayMessage('Item added/updated in cart successfully!', 'success');
+                window.updateCartCount(); // Update the count after success
+
+            } catch (e) {
+                console.error("Error adding to cart:", e);
+                window.displayMessage(e.message || 'Failed to add item. Are you logged in and is the backend running?', 'error');
+            } finally {
+                addToCartBtn.disabled = false;
+                checkOptionsAndToggleCartButton(); // Reset button text
+            }
+        };
+
+
+        // --- Render Functions ---
+
+        /**
+         * Renders the options section (Size, Scent, etc.).
+         */
+        const renderOptions = (options) => {
+            optionsContainer.innerHTML = ''; // Clear previous options
+            Object.keys(options).forEach(optionKey => {
+                const values = options[optionKey];
+                const keyTitle = optionKey.charAt(0).toUpperCase() + optionKey.slice(1);
+                
+                const optionGroup = document.createElement('div');
+                optionGroup.className = 'flex flex-col space-y-2';
+                optionGroup.innerHTML = `<span class="font-semibold text-lg text-gold">${keyTitle}:</span>`;
+
+                const valuesContainer = document.createElement('div');
+                valuesContainer.className = 'flex flex-wrap gap-3';
+                
+                values.forEach(value => {
+                    const button = document.createElement('button');
+                    button.textContent = value;
+                    button.className = `option-button px-4 py-2 rounded-lg text-sm bg-neutral-800 text-white hover:bg-neutral-700`;
+                    button.setAttribute('data-key', optionKey);
+                    button.setAttribute('data-value', value);
+
+                    button.addEventListener('click', () => {
+                        // Deselect all buttons for this option group
+                        valuesContainer.querySelectorAll('.option-button').forEach(btn => {
+                            btn.classList.remove('selected');
+                        });
+                        
+                        // Select the current button
+                        button.classList.add('selected');
+                        
+                        // Update the selected options state
+                        selectedOptions[optionKey] = value;
+                        checkOptionsAndToggleCartButton();
+                    });
+                    
+                    valuesContainer.appendChild(button);
+                });
+
+                optionGroup.appendChild(valuesContainer);
+                optionsContainer.appendChild(optionGroup);
+            });
+            // Initial check to disable button if options are required
+            checkOptionsAndToggleCartButton(); 
+        };
+
+        /**
+         * Renders the main product details.
+         */
+        const renderProduct = (product) => {
+            document.getElementById('product-name').textContent = product.name;
+            document.getElementById('product-price').textContent = formatCurrency(product.price);
+            document.getElementById('product-description').textContent = product.description;
+            document.getElementById('product-image').src = product.image;
+            document.getElementById('product-image').onerror = (e) => {
+                e.target.src = `https://placehold.co/600x600/181818/D4AF37?text=Image+Missing`;
+            };
+
+
+            renderOptions(product.options || {});
+            
+            // Hide loading state and show content
+            loadingState.classList.add('hidden');
+            productImageSection.classList.remove('hidden');
+            productInfoSection.classList.remove('hidden');
+        };
+
+        /**
+         * Fetches product data based on the URL parameter and renders the page.
+         */
+        const fetchAndRenderProduct = () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const productId = parseInt(urlParams.get('id'));
+
+            if (!productId) {
+                document.getElementById('loading-text').textContent = "Error: No product ID specified in the URL.";
+                return;
+            }
+
+            productData = products.find(p => p.id === productId);
+
+            if (productData) {
+                renderProduct(productData);
+            } else {
+                document.getElementById('loading-text').textContent = `Error: Product with ID ${productId} not found.`;
+            }
+        };
+
+        // --- Event Listeners and Initialization ---
+
+        /**
+         * Handles quantity changes.
+         * @param {number} delta - +1 or -1.
+         */
+        const updateQuantity = (delta) => {
+            let currentQty = parseInt(qtyDisplay.value);
+            let newQty = currentQty + delta;
+            if (newQty < 1) newQty = 1;
+            
+            qtyDisplay.value = newQty;
+            
+            // Update the cart button total immediately
+            checkOptionsAndToggleCartButton();
+        };
+
+        // Quantity Buttons
+        document.getElementById('increment-qty').addEventListener('click', () => updateQuantity(1));
+        document.getElementById('decrement-qty').addEventListener('click', () => updateQuantity(-1));
+        
+        // Manual Quantity Input
+        qtyDisplay.addEventListener('change', () => {
+            let currentQty = parseInt(qtyDisplay.value);
+            if (currentQty < 1 || isNaN(currentQty)) {
+                qtyDisplay.value = 1;
+            }
+            // Update the cart button total immediately
+            checkOptionsAndToggleCartButton();
+        });
+
+
+        // Add to Cart Button (now calls the API)
+        addToCartBtn.addEventListener('click', () => {
+            if (addToCartBtn.disabled) {
+                window.displayMessage("Please select all required options (Size/Scent) before adding to cart.", 'error');
+                return;
+            }
+            
+            // Call the new API function
+            addToCartAPI();
         });
 
         // Initialize on DOM load
         document.addEventListener('DOMContentLoaded', fetchAndRenderProduct);
+        document.addEventListener('DOMContentLoaded', window.updateCartCount); // Update cart count in the header
     </script>
 </body>
 </html>

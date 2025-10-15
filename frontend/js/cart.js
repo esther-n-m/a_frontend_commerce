@@ -1,17 +1,23 @@
 /**
- 
- * Manages all cart operations using the secure Express backend and JWT authentication.
- * All core functions (getCart, addToCart, removeFromCart, clearCart) now make async API calls.
+  Shopping Cart Logic (cart.js)
+  Manages all cart operations using localStorage for persistence.
+  All core functions (addToCart, getCart, clearCart) are defined here.
  */
 
-// Ensure this matches your running Express backend URL
-const BACKEND_URL = "http://localhost:5000";
+const CART_STORAGE_KEY = 'ecom_cart';
+// !!! CRITICAL CHANGE: Update this with your actual live Render backend URL !!!
+// Example: https://my-ecom-backend-abc12345.onrender.com
+// You MUST use HTTPS here.
+const BACKEND_URL = "https://backend-commerce-7ncw.onrender.com"; 
 
-// --- Utility for UI Feedback (Unchanged) ---
+// Expose the BASE_URL globally so other files can use it (e.g., auth.html)
+window.BASE_URL = BACKEND_URL;
 
+// Utility for UI Feedback (since we can't use alert()) 
 function displayMessage(message, type = 'default') {
     const container = document.getElementById('message-container');
     if (!container) {
+        // Fallback for pages without the container (like index.html before update)
         console.log(`[Message: ${type}] ${message}`);
         return;
     }
@@ -33,218 +39,124 @@ function displayMessage(message, type = 'default') {
 
     container.appendChild(msgBox);
 
-    // Auto-remove after 3 seconds
+    // Automatically remove the message after 5 seconds
     setTimeout(() => {
         msgBox.style.opacity = '0';
-        msgBox.addEventListener('transitionend', () => msgBox.remove());
-    }, 3000);
+        setTimeout(() => {
+            container.removeChild(msgBox);
+        }, 300); // Wait for fade-out transition
+    }, 5000);
 }
 
-// --- JWT Authentication Helper ---
-
-/**
- * Retrieves the JWT token from localStorage and prepares the Authorization header.
- * If no token is found, it prompts the user to log in and redirects.
- * @returns {object|null} The headers object including the Authorization header, or null if unauthorized.
+/*
+  Loads the cart data from localStorage.
+  @returns {Array} The current cart items array, or an empty array if none exists.
  */
-function getAuthHeaders() {
-    const token = localStorage.getItem('userToken'); // ASSUMPTION: Token is stored here after successful login
-
-    if (!token) {
-        displayMessage("You must be logged in to manage your cart.", 'error');
-        // Redirect to login page for better UX
-        // We will update auth.html next to save the token here!
-        setTimeout(() => { window.location.href = 'auth.html'; }, 1000); 
-        return null;
-    }
-
-    return {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-    };
-}
-
-// --- Core Cart Functions (Now ASYNC API Calls) ---
-
-/**
- * Retrieves the current cart items from the secure backend.
- * @returns {Promise<Array>} The cart items array or an empty array.
- */
-async function getCart() {
-    const headers = getAuthHeaders();
-    if (!headers) return [];
-
+function getCart() {
     try {
-        const response = await fetch(`${BACKEND_URL}/api/cart`, { headers });
-        const data = await response.json();
-
-        if (response.ok) {
-            // The server returns the cart object, which contains an 'items' array
-            return data.items || [];
-        } else {
-            console.error('Failed to fetch cart from server:', data.message);
-            // This might happen if the user is logged in but the cart hasn't been created yet.
-            return [];
-        }
-    } catch (error) {
-        console.error('Network error fetching cart:', error);
-        displayMessage('Could not connect to cart service.', 'error');
+        const cartJson = localStorage.getItem(CART_STORAGE_KEY);
+        // Ensure we return an array if localStorage is empty or corrupted
+        return cartJson ? JSON.parse(cartJson) : [];
+    } catch (e) {
+        console.error("Error reading cart from localStorage:", e);
         return [];
     }
 }
 
-/**
- * Central function to add a product or update the quantity of an existing item.
- * @param {number} productId - The product's ID.
- * @param {string} name - Product name.
- * @param {number} price - Product price.
- * @param {string} image - Product image URL.
- * @param {number} quantity - The quantity to add/set for this item.
- * @param {object} options - Optional selected options (e.g., { size: 'Large', scent: 'Rose' }).
+/*
+  Saves the current cart array to localStorage.
+  @param {Array} cart - The cart array to save.
  */
-async function updateCartItem(productId, name, price, image, quantity, options = {}) {
-    const headers = getAuthHeaders();
-    if (!headers) return false;
-
-    if (quantity < 1) {
-        // Delegate removal to the DELETE endpoint if quantity is set to zero/negative
-        return removeFromCart(productId, options);
-    }
-
-    const payload = {
-        productId: parseInt(productId), // Ensure ID is a number
-        name,
-        price,
-        image,
-        quantity,
-        ...options // Spreading size/scent options
-    };
-
+function saveCart(cart) {
     try {
-        // The backend POST endpoint handles both ADD and UPDATE logic
-        const response = await fetch(`${BACKEND_URL}/api/cart`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(payload),
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            displayMessage(`Cart updated! ${data.message}`, 'success');
-            // Notify all listeners (e.g., cart.html rendering function)
-            window.dispatchEvent(new Event('cartUpdated')); 
-            return true;
-        } else {
-            displayMessage(`Error updating cart: ${data.message || 'Server error.'}`, 'error');
-            return false;
-        }
-    } catch (error) {
-        console.error('Network error updating cart:', error);
-        displayMessage('Network error updating cart.', 'error');
-        return false;
-    }
-}
-
-
-/**
- * Removes an item completely from the cart by product ID.
- * @param {number} productId - The ID of the item to remove.
- * @param {object} options - Optional options to identify the specific item variant.
- */
-async function removeFromCart(productId, options = {}) {
-    const headers = getAuthHeaders();
-    if (!headers) return false;
-
-    try {
-        // The backend DELETE endpoint handles finding and removing the item
-        const response = await fetch(`${BACKEND_URL}/api/cart/${productId}`, {
-            method: 'DELETE',
-            headers,
-            // Send options in the body to correctly identify the item variant (e.g., 'Large Rose Candle')
-            body: JSON.stringify(options)
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            displayMessage('Item removed from cart.', 'info');
-            window.dispatchEvent(new Event('cartUpdated'));
-            return true;
-        } else {
-            displayMessage(`Error removing item: ${data.message || 'Server error.'}`, 'error');
-            return false;
-        }
-    } catch (error) {
-        console.error('Network error removing item:', error);
-        displayMessage('Network error removing item.', 'error');
-        return false;
-    }
-}
-
-/**
- * Completely clears all items from the cart.
- */
-async function clearCart() {
-    const headers = getAuthHeaders();
-    if (!headers) return false;
-
-    try {
-        // The backend DELETE endpoint clears the whole cart for the user
-        const response = await fetch(`${BACKEND_URL}/api/cart/clear`, {
-            method: 'DELETE',
-            headers
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            displayMessage('Cart cleared successfully.', 'info');
-            window.dispatchEvent(new Event('cartUpdated'));
-            return true;
-        } else {
-            displayMessage(`Error clearing cart: ${data.message || 'Server error.'}`, 'error');
-            return false;
-        }
-    } catch (error) {
-        console.error('Network error clearing cart:', error);
-        displayMessage('Network error clearing cart.', 'error');
-        return false;
+        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+    } catch (e) {
+        console.error("Error writing cart to localStorage:", e);
     }
 }
 
 /*
- * Calculates the total price of all items in the cart (local calculation).
- * @param {Array} cart - The cart array from the server.
- * @returns {number} The total price.
+  Adds or increments a product in the cart.
+  @param {Object} product - The product object to add (must include id, name, price, image, quantity, size, scent).
+ */
+function addToCart(product) {
+    let cart = getCart();
+
+    // Create a unique identifier for the item based on product ID and options
+    // This allows the user to have the same product with different options in the cart
+    const itemIdentifier = `${product.productId}-${product.size}-${product.scent}`;
+
+    const existingItem = cart.find(item => 
+        `${item.productId}-${item.size}-${item.scent}` === itemIdentifier
+    );
+
+    if (existingItem) {
+        // Increment quantity if item with same options already exists
+        existingItem.quantity += product.quantity;
+    } else {
+        // Add new item to cart
+        cart.push(product);
+    }
+
+    saveCart(cart);
+    displayMessage(`Added ${product.quantity} x ${product.name} to cart!`, 'success');
+}
+
+/*
+  Removes an item completely from the cart by product ID and options.
+ */
+function removeFromCart(itemIdentifier) {
+    let cart = getCart();
+    const initialLength = cart.length;
+    
+    // Filter out the item based on the unique identifier
+    cart = cart.filter(item => `${item.productId}-${item.size}-${item.scent}` !== itemIdentifier);
+
+    if (cart.length < initialLength) {
+        saveCart(cart);
+        displayMessage('Item removed from cart.', 'info');
+    }
+}
+
+/*
+  Completely clears all items from the cart.
+ */
+function clearCart() {
+    saveCart([]);
+    displayMessage('Cart cleared successfully.', 'info');
+}
+
+/*
+  Updates the quantity of a specific item in the cart.
+ */
+function updateCartItemQuantity(itemIdentifier, newQuantity) {
+    let cart = getCart();
+    
+    const item = cart.find(item => 
+        `${item.productId}-${item.size}-${item.scent}` === itemIdentifier
+    );
+
+    if (item) {
+        item.quantity = newQuantity;
+        saveCart(cart);
+    }
+}
+
+/*
+  Calculates the total price of all items in the cart.
+  @param {Array} cart - The cart array.
+  @returns {number} The total price.
  */
 function calculateCartTotal(cart) {
     // Reduce the array to calculate the total sum (price * quantity)
     return cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 }
 
-
-// --- Exported Functions ---
-
-// The `addToCart` wrapper makes calling from HTML simple by assuming quantity = 1 and passing all necessary fields.
-async function addToCart(product, quantity = 1, options = {}) {
-    return updateCartItem(
-        product.id,
-        product.name,
-        product.price,
-        product.image,
-        quantity,
-        options
-    );
-}
-
-// Expose the core functions and constants globally for use in other HTML files
-window.getCart = getCart;
+// Expose these core functions and constants globally so they can be called from other HTML files
 window.addToCart = addToCart;
-window.updateCartItem = updateCartItem; // Exposed for granular quantity control
-window.removeFromCart = removeFromCart;
+window.getCart = getCart;
 window.clearCart = clearCart;
+window.removeFromCart = removeFromCart;
+window.updateCartItemQuantity = updateCartItemQuantity;
 window.calculateCartTotal = calculateCartTotal;
 window.displayMessage = displayMessage;
-window.BACKEND_URL = BACKEND_URL;
-window.getAuthHeaders = getAuthHeaders; // Useful for other secure requests
