@@ -129,178 +129,170 @@
 
     <!-- Script Block -->
     <script>
-        // Use an empty string if running on the same domain/port
-        const BASE_URL = ''; 
-
-        // --- Utility UI Functions ---
-
-        /**
-         * Global function to display a temporary message.
-         * @param {string} message 
-         * @param {string} type - 'success' or 'error'
-         */
-        const displayMessage = (message, type = 'info') => {
-            const container = document.getElementById('message-container');
-            if (!container) return;
-
-            let classes = "message-box show p-4 rounded-lg shadow-xl text-white font-medium ";
-            switch (type) {
-                case 'success': classes += 'bg-green-600'; break;
-                case 'error': classes += 'bg-red-600'; break;
-                case 'info': default: classes += 'bg-blue-600'; break;
-            }
-
-            container.className = classes;
-            container.textContent = message;
-
-            setTimeout(() => {
-                container.classList.remove('show');
-            }, 5000);
-        };
-        window.displayMessage = displayMessage; // Expose globally if needed by other files
+        // CRITICAL: Define the backend URL here for this file's use
+        // This must match the URL you deployed your backend to on Render.
+        const BACKEND_URL = "https://backend-commerce-7ncw.onrender.com"; 
+        window.BASE_URL = BACKEND_URL;
 
         // --- DOM Elements ---
         const loginForm = document.getElementById('login-form');
         const registerForm = document.getElementById('register-form');
-        const loginButton = document.getElementById('login-button');
-        const registerButton = document.getElementById('register-button');
+        const showLoginBtn = document.getElementById('show-login');
+        const showRegisterBtn = document.getElementById('show-register');
+        const loginBtn = document.getElementById('login-btn');
+        const registerBtn = document.getElementById('register-btn');
         const loginSpinner = document.getElementById('login-spinner');
         const registerSpinner = document.getElementById('register-spinner');
         const loginText = document.getElementById('login-text');
         const registerText = document.getElementById('register-text');
 
-        const showLoginBtn = document.getElementById('show-login');
-        const showRegisterBtn = document.getElementById('show-register');
 
+        // --- UI Utility Functions ---
 
-        // --- Form Management ---
+        function displayMessage(message, type = 'default') {
+            const container = document.getElementById('message-container');
+            const msgBox = document.createElement('div');
+            msgBox.className = `message-box p-3 mb-2 rounded-lg text-sm shadow-xl transition-opacity duration-300 ${
+                type === 'success' ? 'bg-green-500 text-white' :
+                type === 'error' ? 'bg-red-500 text-white' :
+                'bg-blue-500 text-white' 
+            }`;
+            msgBox.textContent = message;
+            container.prepend(msgBox); 
 
+            setTimeout(() => {
+                msgBox.style.opacity = '0';
+                setTimeout(() => msgBox.remove(), 500);
+            }, 5000);
+        }
+
+        // Toggles between the Sign In and Register forms
         const showForm = (formType) => {
             if (formType === 'login') {
                 loginForm.classList.remove('hidden');
                 registerForm.classList.add('hidden');
-                showLoginBtn.classList.add('text-gold', 'border-gold');
-                showLoginBtn.classList.remove('text-gray-500');
-                showRegisterBtn.classList.remove('text-gold', 'border-gold');
-                showRegisterBtn.classList.add('text-gray-500');
+                showLoginBtn.classList.add('text-gold', 'border-b-2', 'border-gold');
+                showRegisterBtn.classList.remove('text-gold', 'border-b-2', 'border-gold');
             } else {
                 loginForm.classList.add('hidden');
                 registerForm.classList.remove('hidden');
-                showRegisterBtn.classList.add('text-gold', 'border-gold');
-                showRegisterBtn.classList.remove('text-gray-500');
-                showLoginBtn.classList.remove('text-gold', 'border-gold');
-                showLoginBtn.classList.add('text-gray-500');
+                showLoginBtn.classList.remove('text-gold', 'border-b-2', 'border-gold');
+                showRegisterBtn.classList.add('text-gold', 'border-b-2', 'border-gold');
             }
         };
 
+        // Enables or disables the submit button based on form input
         const updateButtonState = (formType) => {
             if (formType === 'login') {
                 const email = document.getElementById('login-email').value;
                 const password = document.getElementById('login-password').value;
-                loginButton.disabled = !(email && password);
+                loginBtn.disabled = !(email && password);
             } else {
                 const name = document.getElementById('register-name').value;
                 const email = document.getElementById('register-email').value;
                 const password = document.getElementById('register-password').value;
-                registerButton.disabled = !(name && email && password && password.length >= 6);
+                // Simple validation: check if all fields are filled and password is at least 6 chars
+                registerBtn.disabled = !(name && email && password && password.length >= 6);
             }
         };
 
+        // --- Authentication Handlers (with the critical fix) ---
 
-        // --- API Handlers ---
-
+        /**
+         * @desc Handles the Login API call and stores the JWT token.
+         */
         const handleLogin = async (e) => {
             e.preventDefault();
-
+            
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
 
+            // Update UI for loading state
+            loginBtn.disabled = true;
             loginText.textContent = 'Signing In...';
             loginSpinner.classList.remove('hidden');
-            loginButton.disabled = true;
-
+            
             try {
-                const response = await fetch(`${BASE_URL}/api/users/login`, {
+                const response = await fetch(`${window.BASE_URL}/api/users/login`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password }),
                 });
 
                 const data = await response.json();
 
-                if (response.ok) {
-                    // *** CRITICAL UPDATE: SAVE THE TOKEN ***
+                if (response.ok && data.token) {
+                    displayMessage(`Welcome back, ${data.user.name || 'User'}! Redirecting...`, 'success');
+                    
+                    // CRITICAL FIX: Store the token for subsequent protected API calls (Cart, Profile)
                     localStorage.setItem('userToken', data.token); 
                     
-                    displayMessage(`Login successful! Redirecting...`, 'success');
-                    
-                    // Redirect to the main shop page
                     setTimeout(() => {
-                        window.location.href = 'index.html';
-                    }, 1000); 
+                        window.location.href = 'index.html'; 
+                    }, 500);
                     
                 } else {
-                    displayMessage(`Login Failed: ${data.message || 'Invalid email or password.'}`, 'error');
+                    // Handle API validation errors (e.g., 'Invalid credentials')
+                    displayMessage(data.message || 'Login failed. Check your credentials.', 'error');
                 }
-
-            } catch (error) {
-                console.error('Login API Error:', error);
-                displayMessage('Network error. Could not connect to the server.', 'error');
+            } catch (err) {
+                console.error("Login Fetch Error:", err);
+                displayMessage('Network error occurred. The backend may be unreachable.', 'error');
             } finally {
-                // Reset loading state
-                loginText.textContent = 'Sign In to Your Account';
+                // Reset UI state
+                loginText.textContent = 'Sign In';
                 loginSpinner.classList.add('hidden');
-                updateButtonState('login');
+                updateButtonState('login'); // Re-evaluate button state
             }
         };
 
+
+        /**
+         * @desc Handles the Registration API call and stores the JWT token.
+         */
         const handleRegister = async (e) => {
             e.preventDefault();
-
+            
             const name = document.getElementById('register-name').value;
             const email = document.getElementById('register-email').value;
             const password = document.getElementById('register-password').value;
 
+            // Update UI for loading state
+            registerBtn.disabled = true;
             registerText.textContent = 'Creating Account...';
             registerSpinner.classList.remove('hidden');
-            registerButton.disabled = true;
 
             try {
-                const response = await fetch(`${BASE_URL}/api/users/register`, {
+                const response = await fetch(`${window.BASE_URL}/api/users/register`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name, email, password }),
                 });
 
                 const data = await response.json();
 
-                if (response.ok) {
-                     // *** CRITICAL UPDATE: SAVE THE TOKEN ***
-                    localStorage.setItem('userToken', data.token);
-
-                    displayMessage(`Registration successful! Redirecting...`, 'success');
+                if (response.ok && data.token) {
+                    displayMessage('Registration successful! You are now logged in. Redirecting...', 'success');
                     
-                    // Redirect to the main shop page
+                    // CRITICAL FIX: Store the token for subsequent protected API calls (Cart, Profile)
+                    localStorage.setItem('userToken', data.token); 
+                    
                     setTimeout(() => {
-                        window.location.href = 'index.html';
-                    }, 1000); 
-
+                        window.location.href = 'index.html'; 
+                    }, 500);
+                    
                 } else {
-                    displayMessage(`Registration Failed: ${data.message || 'Error creating account.'}`, 'error');
+                    // Handle API validation errors (e.g., 'User already exists')
+                    displayMessage(data.message || 'Registration failed. Try a different email.', 'error');
                 }
-
-            } catch (error) {
-                console.error('Register API Error:', error);
-                displayMessage('Network error. Could not connect to the server.', 'error');
+            } catch (err) {
+                console.error("Register Fetch Error:", err);
+                displayMessage('Network error occurred. The backend may be unreachable.', 'error');
             } finally {
-                // Reset loading state
-                registerText.textContent = 'Create a New Account';
+                // Reset UI state
+                registerText.textContent = 'Create Account';
                 registerSpinner.classList.add('hidden');
-                updateButtonState('register');
+                updateButtonState('register'); // Re-evaluate button state
             }
         };
 

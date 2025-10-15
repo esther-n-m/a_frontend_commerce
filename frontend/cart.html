@@ -139,340 +139,122 @@
     </div>
 
     <script>
-        const BASE_URL = ''; // Same domain
+        // --- Dependencies ---
+        // Assumes cart.js is loaded and exposes:
+        // window.getCartAPI, window.updateCartItemAPI, window.removeFromCartAPI, 
+        // window.calculateCartTotal, window.displayMessage, window.updateCartCount
 
         // --- DOM Elements ---
-        const cartLoading = document.getElementById('cart-loading');
-        const cartEmpty = document.getElementById('cart-empty');
-        const cartItemsContainer = document.getElementById('cart-items-container');
-        const cartSubtotalEl = document.getElementById('cart-subtotal');
-        const cartTaxesEl = document.getElementById('cart-taxes');
-        const cartTotalEl = document.getElementById('cart-total');
-        const cartItemCountEl = document.getElementById('cart-item-count');
+        const cartItemsContainer = document.getElementById('cart-items');
+        const cartTotalElement = document.getElementById('cart-total');
         const checkoutBtn = document.getElementById('checkout-btn');
         const clearCartBtn = document.getElementById('clear-cart-btn');
 
-        // --- Utility Functions ---
-
-        const getToken = () => localStorage.getItem('userToken');
-
+        
         /**
-         * Displays a temporary message overlay.
-         * @param {string} message 
-         * @param {string} type - 'success' or 'error'
+         * @desc Fetches cart data from the API and renders the cart page.
          */
-        const displayMessage = (message, type = 'info') => {
-            const container = document.getElementById('message-container');
-            if (!container) return;
-
-            let classes = "message-box show p-4 rounded-lg shadow-xl text-white font-medium ";
-            switch (type) {
-                case 'success': classes += 'bg-green-600'; break;
-                case 'error': classes += 'bg-red-600'; break;
-                case 'info': default: classes += 'bg-blue-600'; break;
-            }
-
-            container.className = classes;
-            container.textContent = message;
-
-            setTimeout(() => {
-                container.classList.remove('show');
-            }, 5000);
-        };
-        window.displayMessage = displayMessage;
-
-
-        // --- Cart API Functions ---
-
-        /**
-         * Core function to fetch the cart data from the backend.
-         */
-        const fetchCart = async (showLoading = true) => {
-            const token = getToken();
-            if (!token) {
-                window.location.href = 'auth.html';
-                return;
-            }
+        window.fetchCart = async () => {
+            cartItemsContainer.innerHTML = '<p class="text-center py-8 text-gold">Loading cart...</p>';
+            window.updateCartCount();
             
-            if (showLoading) {
-                cartLoading.classList.remove('hidden');
-                cartItemsContainer.innerHTML = '';
+            // Check if user is logged in (token exists)
+            if (!window.getCartAPI || !localStorage.getItem('userToken')) {
+                renderEmptyCart("Please log in to view your shopping cart.");
+                return;
             }
+
+            try {
+                const cartItems = await window.getCartAPI();
+                renderCart(cartItems);
+            } catch (error) {
+                renderEmptyCart("Error loading cart. Please check your network connection.");
+            }
+        };
+
+        
+        /**
+         * @desc Renders the fetched cart items and updates totals.
+         * @param {Array} items - Array of cart items from the API.
+         */
+        const renderCart = (items) => {
+            cartItemsContainer.innerHTML = '';
+            const total = window.calculateCartTotal(items);
             
-            try {
-                const response = await fetch(`${BASE_URL}/api/cart`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-
-                if (response.status === 401) {
-                     displayMessage('Session expired. Please sign in again.', 'error');
-                     localStorage.removeItem('userToken');
-                     window.location.href = 'auth.html';
-                     return null;
-                }
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const data = await response.json();
-                renderCart(data.items);
-                return data.items;
-
-            } catch (error) {
-                console.error('Error fetching cart:', error);
-                displayMessage('Failed to load cart. Please try refreshing.', 'error');
-                return null;
-            } finally {
-                cartLoading.classList.add('hidden');
-            }
-        };
-
-        /**
-         * API call to update the quantity of a specific cart item.
-         * @param {string} itemId - The MongoDB _id of the item in the cart.
-         * @param {number} newQuantity 
-         */
-        const updateCartItemAPI = async (itemId, newQuantity) => {
-            const token = getToken();
-            if (!token) {
-                window.location.href = 'auth.html';
+            if (items.length === 0) {
+                renderEmptyCart("Your cart is currently empty.");
                 return;
             }
 
-            try {
-                const response = await fetch(`${BASE_URL}/api/cart/update`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ itemId, quantity: newQuantity }),
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    displayMessage(`Quantity updated to ${newQuantity}.`, 'success');
-                    // Re-fetch and re-render the entire cart to reflect the change and new totals
-                    await fetchCart(false); 
-                } else {
-                    displayMessage(`Update failed: ${data.message || 'Error communicating with server.'}`, 'error');
-                }
-
-            } catch (error) {
-                console.error('Error updating cart item:', error);
-                displayMessage('Network error. Failed to update item.', 'error');
-            }
-        };
-
-        /**
-         * API call to remove a specific cart item.
-         * @param {string} itemId - The MongoDB _id of the item in the cart.
-         */
-        const removeCartItemAPI = async (itemId) => {
-            const token = getToken();
-            if (!token) {
-                window.location.href = 'auth.html';
-                return;
-            }
-
-            try {
-                const response = await fetch(`${BASE_URL}/api/cart/remove/${itemId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    displayMessage('Item removed from cart.', 'success');
-                    // Re-fetch and re-render the entire cart
-                    await fetchCart(false);
-                } else {
-                    displayMessage(`Removal failed: ${data.message || 'Error communicating with server.'}`, 'error');
-                }
-
-            } catch (error) {
-                console.error('Error removing cart item:', error);
-                displayMessage('Network error. Failed to remove item.', 'error');
-            }
-        };
-
-        /**
-         * API call to clear the entire cart. Exposed globally for use in checkout.html.
-         */
-        window.clearCartAPI = async () => {
-            const token = getToken();
-            if (!token) {
-                // If no token, we can't clear the cart.
-                return;
-            }
-
-            try {
-                const response = await fetch(`${BASE_URL}/api/cart/clear`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-
-                if (response.ok) {
-                    displayMessage('Your cart has been cleared.', 'info');
-                    // Re-fetch and re-render the entire cart to show empty state
-                    await fetchCart(false); 
-                    return true;
-                } else {
-                    const data = await response.json();
-                    displayMessage(`Failed to clear cart: ${data.message || 'Error communicating with server.'}`, 'error');
-                    return false;
-                }
-
-            } catch (error) {
-                console.error('Error clearing cart:', error);
-                displayMessage('Network error. Failed to clear cart.', 'error');
-                return false;
-            }
-        };
-
-
-        // --- UI Rendering and Event Handlers ---
-
-        /**
-         * Renders a single cart item row HTML.
-         * @param {object} item - Cart item object from the API.
-         * @returns {string} HTML string.
-         */
-        const createCartItemHTML = (item) => {
-            const itemPrice = item.price * item.quantity;
-            const optionsDisplay = (item.size || item.scent) 
-                ? `<p class="text-xs text-gray-500 mt-1">${item.size ? 'Size: ' + item.size : ''}${item.scent ? (item.size ? ' | ' : '') + 'Scent: ' + item.scent : ''}</p>`
-                : '';
-
-            // CRITICAL: We use item._id for all delete/update operations
-            return `
-                <div class="flex items-start justify-between border-b border-neutral-800 pb-6 pt-4 space-x-4">
-                    <!-- Product Image -->
-                    <div class="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border border-neutral-800">
-                        <img src="${item.image}" onerror="this.onerror=null;this.src='https://placehold.co/96x96/1f2937/d4af37?text=NO+IMG'" 
-                             alt="${item.name}" class="w-full h-full object-cover">
-                    </div>
-
-                    <!-- Product Details -->
-                    <div class="flex-grow min-w-0">
-                        <h3 class="text-lg font-medium text-white">${item.name}</h3>
-                        ${optionsDisplay}
-                        <p class="mt-1 text-gold font-semibold">$${item.price.toFixed(2)} / unit</p>
-                    </div>
-
-                    <!-- Quantity Controls -->
-                    <div class="flex items-center space-x-2 flex-shrink-0">
-                        <div class="flex items-center border border-neutral-700 rounded-lg overflow-hidden">
-                            <button class="qty-btn p-2 text-gray-400 hover:bg-neutral-800" data-action="decrement" data-id="${item._id}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" /></svg>
-                            </button>
-                            <input type="number" value="${item.quantity}" min="1" 
-                                   class="qty-input w-12 text-center bg-neutral-900 border-none focus:ring-0" 
-                                   data-id="${item._id}">
-                            <button class="qty-btn p-2 text-gray-400 hover:bg-neutral-800" data-action="increment" data-id="${item._id}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
-                            </button>
+            items.forEach(item => {
+                const itemElement = document.createElement('div');
+                itemElement.className = 'flex justify-between items-center py-4 border-b border-neutral-700 last:border-b-0';
+                
+                // CRITICAL: We need the MongoDB _id for removal/update
+                const itemId = item._id; 
+                
+                itemElement.innerHTML = `
+                    <div class="flex items-center space-x-4 flex-grow">
+                        <img src="${item.image || 'placeholder.jpg'}" alt="${item.name}" class="w-16 h-16 object-cover rounded-md border border-neutral-700">
+                        <div>
+                            <p class="font-semibold text-white">${item.name}</p>
+                            ${item.size ? `<p class="text-sm text-gray-400">Size: ${item.size}</p>` : ''}
+                            ${item.scent ? `<p class="text-sm text-gray-400">Scent: ${item.scent}</p>` : ''}
+                            <p class="text-sm text-gold mt-1">Ksh ${item.price.toFixed(2)}</p>
                         </div>
                     </div>
 
-                    <!-- Total Price and Remove Button -->
-                    <div class="flex flex-col items-end flex-shrink-0 min-w-[100px]">
-                        <p class="text-lg font-semibold">$${itemPrice.toFixed(2)}</p>
-                        <button class="remove-btn text-xs mt-1 text-red-500 hover:text-red-400 transition" data-id="${item._id}">
-                            Remove
+                    <div class="flex items-center space-x-6">
+                        <input type="number" 
+                            data-id="${itemId}" 
+                            value="${item.quantity}" 
+                            min="1" 
+                            class="qty-input w-16 px-2 py-1 bg-neutral-800 border border-neutral-700 rounded-md text-center text-white focus:ring-gold focus:border-gold"
+                        >
+                        <button data-id="${itemId}" class="remove-btn text-gray-500 hover:text-red-500 transition duration-150" aria-label="Remove item">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                         </button>
                     </div>
-                </div>
-            `;
+                `;
+                cartItemsContainer.appendChild(itemElement);
+            });
+
+            // Update totals and button states
+            cartTotalElement.textContent = `Ksh ${total.toFixed(2)}`;
+            checkoutBtn.disabled = false;
+            clearCartBtn.disabled = false;
+            
+            attachCartEventListeners();
         };
+
+        /**
+         * @desc Displays a message when the cart is empty.
+         */
+        const renderEmptyCart = (message) => {
+            cartItemsContainer.innerHTML = `<p class="text-center py-8 text-gray-400">${message}</p>`;
+            cartTotalElement.textContent = 'Ksh 0.00';
+            checkoutBtn.disabled = true;
+            clearCartBtn.disabled = true;
+        }
+
         
         /**
-         * Renders the entire cart and summary section.
-         * @param {Array} items 
+         * @desc Attaches event listeners for removing and updating item quantities.
          */
-        const renderCart = (items) => {
-            // Store the fetched items globally for easy access in handlers
-            window.currentCartItems = items; 
-            
-            // 1. Render Items
-            if (items.length === 0) {
-                cartEmpty.classList.remove('hidden');
-                cartItemsContainer.innerHTML = '';
-            } else {
-                cartEmpty.classList.add('hidden');
-                const itemsHTML = items.map(createCartItemHTML).join('');
-                cartItemsContainer.innerHTML = itemsHTML;
-            }
-
-            // 2. Calculate Totals
-            const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            const shipping = subtotal > 0 ? 15.00 : 0.00; // Example shipping logic
-            const taxes = subtotal * 0.10;
-            const total = subtotal + shipping + taxes;
-
-            // 3. Update Summary UI
-            cartItemCountEl.textContent = items.length;
-            cartSubtotalEl.textContent = `$${subtotal.toFixed(2)}`;
-            cartTaxesEl.textContent = `$${taxes.toFixed(2)}`;
-            cartTotalEl.textContent = `$${total.toFixed(2)}`;
-
-            // 4. Update Button State
-            const hasItems = items.length > 0;
-            checkoutBtn.disabled = !hasItems;
-            clearCartBtn.disabled = !hasItems;
-
-            // 5. Attach Dynamic Listeners
-            attachCartListeners();
-        };
-
-        /**
-         * Attaches event listeners to all dynamic elements (buttons, inputs).
-         */
-        const attachCartListeners = () => {
-            const container = cartItemsContainer;
-            
-            // Remove/Clear Cart
-            container.querySelectorAll('.remove-btn').forEach(btn => {
-                btn.onclick = (e) => removeCartItemAPI(e.target.getAttribute('data-id'));
+        const attachCartEventListeners = () => {
+            // Remove button listener
+            document.querySelectorAll('.remove-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const itemId = e.currentTarget.getAttribute('data-id');
+                    if (window.removeFromCartAPI) {
+                        window.removeFromCartAPI(itemId); // Calls the API function
+                    }
+                });
             });
 
-            // Quantity Buttons (+/-)
-            container.querySelectorAll('.qty-btn').forEach(btn => {
-                btn.onclick = (e) => {
-                    // Find the closest parent with a data-action attribute
-                    const action = btn.getAttribute('data-action');
-                    const itemId = btn.getAttribute('data-id');
-                    
-                    // Find the corresponding input field
-                    const input = container.querySelector(`input.qty-input[data-id="${itemId}"]`);
-                    let currentQty = parseInt(input.value);
-                    
-                    let newQty = currentQty;
-                    if (action === 'increment') {
-                        newQty += 1;
-                    } else if (action === 'decrement' && currentQty > 1) {
-                        newQty -= 1;
-                    }
-                    
-                    if (newQty !== currentQty) {
-                        // Optimistically update the input value before API call
-                        input.value = newQty; 
-                        updateCartItemAPI(itemId, newQty);
-                    }
-                };
-            });
-
-            // Quantity Input (Manual Change)
-            container.querySelectorAll('.qty-input').forEach(input => {
+            // Quantity input listener
+            document.querySelectorAll('.qty-input').forEach(input => {
+                // Use 'change' event to send API request only when user finishes input
                 input.onchange = (e) => {
                     const itemId = e.target.getAttribute('data-id');
                     let newQty = parseInt(e.target.value);
@@ -482,7 +264,9 @@
                         newQty = 1;
                         e.target.value = 1; 
                     }
-                    updateCartItemAPI(itemId, newQty);
+                    if (window.updateCartItemAPI) {
+                        window.updateCartItemAPI(itemId, newQty); // Calls the API function
+                    }
                 };
             });
         };
@@ -490,15 +274,15 @@
         // --- Initialization and Global Event Listeners ---
 
         document.addEventListener('DOMContentLoaded', () => {
-            fetchCart(); // Initial load of the cart from the API
+            window.fetchCart(); // Initial load of the cart from the API
+            window.updateCartCount(); // Update the count in the header
             
             // Checkout button listener
             checkoutBtn.addEventListener('click', () => {
-                 // Check button disabled state, which is controlled by renderCart
                  if (!checkoutBtn.disabled) {
                      window.location.href = 'checkout.html';
                  } else {
-                     displayMessage("Your cart is empty. Please add items before checking out.", 'error');
+                     window.displayMessage("Your cart is empty. Please add items before checking out.", 'error');
                  }
             });
             

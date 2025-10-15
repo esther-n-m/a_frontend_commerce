@@ -136,166 +136,147 @@
         </div>
     </footer>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const productGrid = document.getElementById('product-grid');
-            const loadingMessage = document.getElementById('loading-message');
-            const mobileMenuBtn = document.querySelector('nav button');
-            const mobileMenu = document.getElementById('mobile-menu');
-            
-            const cartCountElement = document.getElementById('cart-count');
+     <script>
+        // --- NOTE: window.BASE_URL is assumed to be defined by cart.js ---
 
-            // --- Cart Utilities (Relies on cart.js) ---
-            const updateCartCount = () => {
-                // Check if getCart is available (from cart.js)
-                if (typeof window.getCart === 'function') {
-                    const cart = window.getCart();
-                    const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-                    cartCountElement.textContent = totalItems;
-                }
-            };
-            window.updateCartCount = updateCartCount; // Expose globally for other files
-            updateCartCount(); // Initial load
+        // Helper function to create the HTML structure for a single product card
+        const createProductCard = (product) => {
+            const card = document.createElement('div');
+            card.className = 'product-card bg-[#1f2937] rounded-lg overflow-hidden shadow-2xl';
+            // Set data attributes for easy access and navigation
+            card.setAttribute('data-product-id', product.id);
 
-            // --- Navigation & Mobile Menu ---
-            mobileMenuBtn.addEventListener('click', () => {
-                mobileMenu.classList.toggle('hidden');
-                // Toggle the aria-label for accessibility (optional but good practice)
-                const isExpanded = mobileMenu.classList.contains('hidden');
-                mobileMenuBtn.setAttribute('aria-expanded', !isExpanded);
-                mobileMenuBtn.setAttribute('aria-label', isExpanded ? 'Open menu' : 'Close menu');
+            card.innerHTML = `
+                <img src="${product.image}" alt="${product.name}" class="w-full h-64 object-cover">
+                <div class="p-6">
+                    <h3 class="text-xl font-semibold text-white truncate">${product.name}</h3>
+                    <p class="text-gold mt-1 font-bold">Ksh ${product.price.toFixed(2)}</p>
+                    <p class="text-gray-400 text-sm mt-2">${product.description || 'Elevate your space with refined comfort.'}</p>
+                    <button 
+                        class="mt-4 w-full btn-gold py-2 rounded-md font-semibold text-sm"
+                        data-action="add-to-cart"
+                        data-product-id="${product.id}"
+                        data-product-name="${product.name}"
+                        data-product-price="${product.price}"
+                        data-product-image="${product.image}"
+                    >
+                        Add to Cart
+                    </button>
+                </div>
+            `;
+            return card;
+        };
+
+        // Renders all products to the grid
+        const renderProducts = (products) => {
+            const productList = document.getElementById('product-list');
+            if (products.length === 0) {
+                 productList.innerHTML = `
+                    <div class="col-span-full py-10 text-center text-gray-400">
+                        <p class="text-xl">No products found.</p>
+                    </div>`;
+                return;
+            }
+
+            products.forEach(product => {
+                productList.appendChild(createProductCard(product));
             });
+            
+            attachProductEventListeners();
+        };
 
 
-            // --- Product Data Mock/Fetch ---
-            const products = [
-                { id: 1, name: "Regal Velvet Pillow", category: "Pillows", price: 89.99, description: "A deeply plush velvet pillow offering unparalleled comfort.", image: "https://placehold.co/600x400/1e293b/d4af37?text=Velvet+Pillow" },
-                { id: 2, name: "Midnight Musk Candle", category: "Candles", price: 49.99, description: "A sophisticated blend of sandalwood, amber, and deep musk.", image: "https://placehold.co/600x400/222222/d4af37?text=Musk+Candle" },
-                { id: 3, name: "Silk Dream Pillow", category: "Pillows", price: 129.99, description: "Hypoallergenic silk case with a feather-light filling.", image: "https://placehold.co/600x400/4a4a4a/d4af37?text=Silk+Pillow" },
-                { id: 4, name: "Bergamot Bliss Candle", category: "Candles", price: 44.99, description: "A light, refreshing citrus and floral scent for clarity.", image: "https://placehold.co/600x400/3c3c3c/d4af37?text=Bergamot+Candle" },
-                { id: 5, name: "Luxe Linen Pillow", category: "Pillows", price: 79.99, description: "Breathable, stonewashed linen for a relaxed, elegant look.", image: "https://placehold.co/600x400/555555/d4af37?text=Linen+Pillow" },
-                { id: 6, name: "Spiced Teak Candle", category: "Candles", price: 54.99, description: "Warm teakwood, cinnamon, and a hint of vanilla for a cozy evening.", image: "https://placehold.co/600x400/666666/d4af37?text=Teak+Candle" },
-                { id: 7, name: "Monogram Pillow", category: "Pillows", price: 99.99, description: "Custom embroidered cotton pillow, personalized for you.", image: "https://placehold.co/600x400/777777/d4af37?text=Monogram+Pillow" },
-                { id: 8, name: "Ocean Breeze Candle", category: "Candles", price: 49.99, description: "Crisp, clean scent of sea salt and aquatic florals.", image: "https://placehold.co/600x400/888888/d4af37?text=Ocean+Candle" }
-            ];
-
-            // Mock backend API URL
-            const BACKEND_URL = "http://localhost:5000";
-
-            /**
-             * Mock Fetch Function (since we don't have a live server)
-             * Simulates fetching product data with a delay.
-             */
-            const fetchProducts = async () => {
-                loadingMessage.textContent = 'Loading products...';
-                try {
-                    // Simulate API call delay
-                    await new Promise(resolve => setTimeout(resolve, 500)); 
-
-                    // In a real app, this would be:
-                    // const response = await fetch(`${BACKEND_URL}/api/products`);
-                    // const products = await response.json();
-
-                    // Display products and hide loader
-                    renderProducts(products);
-                    loadingMessage.classList.add('hidden');
-                    addProductCardListeners();
-
-                } catch (error) {
-                    console.error("Failed to fetch products:", error);
-                    loadingMessage.textContent = 'Failed to load products. Please try again later.';
-                    loadingMessage.classList.remove('hidden');
-                }
-            };
-
-            /**
-             * Creates the HTML structure for a single product card.
-             * @param {object} product - The product data object.
-             * @returns {string} The HTML string for the product card.
-             */
-            const createProductCard = (product) => {
-                return `
-                    <div data-product-id="${product.id}" class="product-card bg-[#1a1a1a] rounded-xl overflow-hidden shadow-lg border border-gray-800">
-                        <img 
-                            src="${product.image}" 
-                            alt="${product.name}" 
-                            class="w-full h-48 object-cover object-center"
-                            onerror="this.onerror=null;this.src='https://placehold.co/600x400/0d0d0d/f5f5f5?text=Sovereign';"
-                        >
-                        <div class="p-6">
-                            <span class="text-xs font-medium text-gold uppercase tracking-widest">${product.category}</span>
-                            <h3 class="text-xl font-semibold mt-2 mb-3 text-white truncate">${product.name}</h3>
-                            <p class="text-gray-400 text-sm h-10 overflow-hidden">${product.description}</p>
-                            <div class="flex justify-between items-center mt-4">
-                                <span class="text-xl font-bold text-white">$${product.price.toFixed(2)}</span>
-                                <button data-product-id="${product.id}" data-product-name="${product.name}" data-product-price="${product.price}" data-product-image="${product.image}"
-                                    class="add-to-cart-btn btn-gold text-sm font-medium px-4 py-2 rounded-full transform transition duration-150 hover:scale-[1.05]"
-                                    aria-label="Add ${product.name} to cart"
-                                >
-                                    Add to Cart
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            };
-
-            /**
-             * Renders the list of products into the main grid.
-             * @param {Array} products - The array of product objects.
-             */
-            const renderProducts = (products) => {
-                if (products.length === 0) {
-                    productGrid.innerHTML = '<p class="col-span-full text-center text-gray-500">No products found.</p>';
-                    return;
+        
+        // CRITICAL CHANGE: This function  uses  deployed backend API
+        
+        const fetchProducts = async () => {
+            // Check if the BASE_URL is available from cart.js
+            if (typeof window.BASE_URL === 'undefined') {
+                document.getElementById('product-list').innerHTML = 
+                    `<div class="col-span-full py-10 text-center text-red-500">
+                        <p class="text-xl mb-4">Configuration Error</p>
+                        <p>The BASE_URL is not set. Please ensure 'cart.js' is loaded and defines window.BASE_URL.</p>
+                    </div>`;
+                return;
+            }
+            
+            try {
+                // Fetch products from your deployed backend API (GET /api/products)
+                const response = await fetch(`${window.BASE_URL}/api/products`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
                 }
                 
-                // Map the product array to an array of HTML strings and join them
-                const cardsHTML = products.map(createProductCard).join('');
-                productGrid.innerHTML = cardsHTML;
-            };
+                const products = await response.json(); 
+                
+                // Clear the loading message and render the new products
+                document.getElementById('product-list').innerHTML = ''; 
+                renderProducts(products); 
+                
+            } catch (error) {
+                console.error("Error fetching products from backend:", error);
+                // Display a detailed error message if the API is down
+                document.getElementById('product-list').innerHTML = 
+                    `<div class="col-span-full py-10 text-center text-gray-400">
+                        <p class="text-xl mb-4"> Products Unavailable</p>
+                        <p>Could not load products from the server: ${window.BASE_URL}.</p>
+                        <p class="text-sm mt-2 text-red-400">Please ensure your backend is running on Render and the URL in cart.js is correct.</p>
+                    </div>`;
+            }
+        };
 
-            /**
-             * Adds click listeners to each product card to simulate navigation 
-             * to a product detail page (which we will build next!).
-             */
-            const addProductCardListeners = () => {
-                document.querySelectorAll('.product-card').forEach(card => {
-                    card.addEventListener('click', (event) => {
-                        // Prevent clicking on the 'Add to Cart' button from triggering the detail page logic
-                        if (event.target.closest('.add-to-cart-btn')) {
-                            const btn = event.target.closest('.add-to-cart-btn');
-                            const item = {
-                                id: parseInt(btn.getAttribute('data-product-id')),
-                                name: btn.getAttribute('data-product-name'),
-                                price: parseFloat(btn.getAttribute('data-product-price')),
-                                image: btn.getAttribute('data-product-image')
-                            };
 
-                            // Add to cart with default options (since this is an index page)
-                            // We need to check if addToCart is available from cart.js
-                            if (typeof window.addToCart === 'function') {
-                                window.addToCart(item);
-                                window.updateCartCount();
-                            } else {
-                                console.error('cart.js not loaded correctly.');
-                            }
+        // Attaches event listeners to all product cards and buttons after rendering
+        const attachProductEventListeners = () => {
+            document.querySelectorAll('.product-card').forEach(card => {
+                card.addEventListener('click', (e) => {
+                    // Check if the click was on the 'Add to Cart' button
+                    const btn = e.target.closest('[data-action="add-to-cart"]');
+                    if (btn) {
+                        // Prevent card navigation if button was clicked
+                        e.stopPropagation(); 
 
-                            return; 
+                        const item = {
+                            // Note: Product ID is typically a string from MongoDB in a real setup, 
+                            // but we use 'parseInt' to match the front-end file's original structure (id: 1, 2, 3...)
+                            productId: parseInt(btn.getAttribute('data-product-id')),
+                            name: btn.getAttribute('data-product-name'),
+                            price: parseFloat(btn.getAttribute('data-product-price')),
+                            image: btn.getAttribute('data-product-image'),
+                            quantity: 1 // Default quantity for quick add
+                        };
+
+                        // Add to cart using the API-based function from cart.js
+                        if (typeof window.addToCart === 'function') {
+                            window.addToCart(item);
+                            // updateCartCount() is called inside addToCartAPI for efficiency
+                        } else {
+                            console.error('Cart logic (cart.js) not loaded correctly or missing API functions.');
                         }
-                        
-                        const productId = card.getAttribute('data-product-id');
-                        if (productId) {
-                            // This line simulates navigating to a product detail page
-                            window.location.href = `product-detail.html?id=${productId}`;
-                        }
-                    });
+
+                        return; 
+                    }
+                    
+                    const productId = card.getAttribute('data-product-id');
+                    if (productId) {
+                        // Navigate to product detail page
+                        window.location.href = `product-detail.html?id=${productId}`;
+                    }
                 });
-            };
+            });
+        };
 
 
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
             // Initial call to fetch and display products
             fetchProducts();
+            
+            // Initial call to update the cart count in the header
+            if (typeof window.updateCartCount === 'function') {
+                 window.updateCartCount();
+            }
         });
     </script>
 </body>

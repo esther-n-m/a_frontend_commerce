@@ -1,23 +1,24 @@
 /**
   Shopping Cart Logic (cart.js)
-  Manages all cart operations using localStorage for persistence.
-  All core functions (addToCart, getCart, clearCart) are defined here.
+  Manages all cart operations using the deployed backend API (Render).
+  All core functions are now API-based and require a JWT token.
  */
 
-const CART_STORAGE_KEY = 'ecom_cart';
-// !!! CRITICAL CHANGE: Update this with your actual live Render backend URL !!!
-// Example: https://my-ecom-backend-abc12345.onrender.com
-// You MUST use HTTPS here.
-const BACKEND_URL = "https://backend-commerce-7ncw.onrender.com"; 
-
-// Expose the BASE_URL globally so other files can use it (e.g., auth.html)
+// !!! CRITICAL: Set this to your actual live Render backend URL !!!
+const BACKEND_URL = "https://backend-commerce-7ncw.onrender.com/"; 
 window.BASE_URL = BACKEND_URL;
 
-// Utility for UI Feedback (since we can't use alert()) 
+// --- Utility Functions ---
+
+function getToken() {
+    // Fetches the JWT token stored by auth.html after successful login
+    return localStorage.getItem('userToken'); 
+}
+
+// Utility for UI Feedback (Must be defined globally for all pages)
 function displayMessage(message, type = 'default') {
     const container = document.getElementById('message-container');
     if (!container) {
-        // Fallback for pages without the container (like index.html before update)
         console.log(`[Message: ${type}] ${message}`);
         return;
     }
@@ -26,137 +27,244 @@ function displayMessage(message, type = 'default') {
     msgBox.className = `p-3 mb-2 rounded-lg text-sm transition-opacity duration-300 shadow-xl ${
         type === 'success' ? 'bg-green-500 text-white' :
         type === 'error' ? 'bg-red-500 text-white' :
-        'bg-blue-500 text-white'
+        'bg-blue-500 text-white' 
     }`;
     msgBox.textContent = message;
+    container.prepend(msgBox); 
 
-    // Fixed positioning for visibility on mobile and desktop
-    container.style.position = 'fixed';
-    container.style.top = '1rem';
-    container.style.right = '1rem';
-    container.style.zIndex = '50';
-    container.style.maxWidth = '300px';
-
-    container.appendChild(msgBox);
-
-    // Automatically remove the message after 5 seconds
     setTimeout(() => {
-        msgBox.style.opacity = '0';
-        setTimeout(() => {
-            container.removeChild(msgBox);
-        }, 300); // Wait for fade-out transition
+        msgBox.classList.add('opacity-0');
+        setTimeout(() => msgBox.remove(), 300);
     }, 5000);
 }
+window.displayMessage = displayMessage;
 
-/*
-  Loads the cart data from localStorage.
-  @returns {Array} The current cart items array, or an empty array if none exists.
+
+// --- API-BASED CART FUNCTIONS ---
+
+/**
+ * @desc Fetches the user's cart from the backend (GET /api/cart)
+ * @returns {Array} Array of cart items or empty array on failure/no token
  */
-function getCart() {
+window.getCartAPI = async function() {
+    const token = getToken();
+    if (!token) {
+        // If no token, user is not logged in.
+        return []; 
+    }
+
     try {
-        const cartJson = localStorage.getItem(CART_STORAGE_KEY);
-        // Ensure we return an array if localStorage is empty or corrupted
-        return cartJson ? JSON.parse(cartJson) : [];
-    } catch (e) {
-        console.error("Error reading cart from localStorage:", e);
+        const response = await fetch(`${window.BASE_URL}/api/cart`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (response.ok) {
+            const cartData = await response.json();
+            // The backend returns the whole cart object, we want the items array
+            return cartData.items || []; 
+        } 
+        
+        if (response.status === 401) {
+             console.error("Authentication failed. Token expired or invalid.");
+             // Clear token so user is forced to log in
+             localStorage.removeItem('userToken');
+             window.displayMessage('Session expired. Please log in again.', 'error');
+        }
+
+        return []; 
+
+    } catch (error) {
+        console.error("Network error fetching cart:", error);
         return [];
     }
 }
 
-/*
-  Saves the current cart array to localStorage.
-  @param {Array} cart - The cart array to save.
+/**
+ * @desc Adds an item to the backend cart (POST /api/cart/add)
+ * @param {object} item - { productId, name, price, quantity, size, scent }
  */
-function saveCart(cart) {
+window.addToCartAPI = async function(item) {
+    const token = getToken();
+    if (!token) {
+        window.displayMessage('Please log in to add items to your cart.', 'error');
+        return;
+    }
+
+    // The backend's /api/cart/add expects: productId, name, price, quantity, size, scent
+    const payload = {
+        productId: item.productId,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity || 1,
+        // Ensure size and scent are passed, even if null/undefined, 
+        // to match the Cart model structure
+        size: item.size || null,
+        scent: item.scent || null
+    };
+
     try {
-        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
-    } catch (e) {
-        console.error("Error writing cart to localStorage:", e);
+        const response = await fetch(`${window.BASE_URL}/api/cart/add`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            window.displayMessage(`Added ${payload.name} to cart.`, 'success');
+            // Update cart count in the header
+            window.updateCartCount(); 
+        } else {
+            window.displayMessage(`Failed to add item: ${data.message || 'Server error.'}`, 'error');
+        }
+    } catch (error) {
+        console.error("Network error adding item:", error);
+        window.displayMessage('Network error. Check your backend connection.', 'error');
     }
 }
 
-/*
-  Adds or increments a product in the cart.
-  @param {Object} product - The product object to add (must include id, name, price, image, quantity, size, scent).
+/**
+ * @desc Updates the quantity of a specific item in the cart (PUT /api/cart/update)
+ * @param {string} itemId - The MongoDB _id of the item in the cart array.
+ * @param {number} newQuantity 
  */
-function addToCart(product) {
-    let cart = getCart();
+window.updateCartItemAPI = async function(itemId, newQuantity) {
+    const token = getToken();
+    if (!token) { return; } 
 
-    // Create a unique identifier for the item based on product ID and options
-    // This allows the user to have the same product with different options in the cart
-    const itemIdentifier = `${product.productId}-${product.size}-${product.scent}`;
+    try {
+        const response = await fetch(`${window.BASE_URL}/api/cart/update`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ itemId, quantity: newQuantity })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+             // Re-fetch and re-render the cart page to update totals (only if on cart.html)
+             if (window.fetchCart) window.fetchCart(); 
+             window.updateCartCount();
+        } else {
+            window.displayMessage(`Update failed: ${data.message || 'Server error.'}`, 'error');
+            if (window.fetchCart) window.fetchCart(); // Re-render to restore previous quantity on failure
+        }
 
-    const existingItem = cart.find(item => 
-        `${item.productId}-${item.size}-${item.scent}` === itemIdentifier
-    );
-
-    if (existingItem) {
-        // Increment quantity if item with same options already exists
-        existingItem.quantity += product.quantity;
-    } else {
-        // Add new item to cart
-        cart.push(product);
-    }
-
-    saveCart(cart);
-    displayMessage(`Added ${product.quantity} x ${product.name} to cart!`, 'success');
-}
-
-/*
-  Removes an item completely from the cart by product ID and options.
- */
-function removeFromCart(itemIdentifier) {
-    let cart = getCart();
-    const initialLength = cart.length;
-    
-    // Filter out the item based on the unique identifier
-    cart = cart.filter(item => `${item.productId}-${item.size}-${item.scent}` !== itemIdentifier);
-
-    if (cart.length < initialLength) {
-        saveCart(cart);
-        displayMessage('Item removed from cart.', 'info');
+    } catch (error) {
+        console.error("Network error updating item:", error);
+        window.displayMessage('Network error. Could not update cart.', 'error');
     }
 }
 
-/*
-  Completely clears all items from the cart.
+/**
+ * @desc Removes an item entirely from the cart (DELETE /api/cart/remove/:itemId)
+ * @param {string} itemId - The MongoDB _id of the item in the cart array.
  */
-function clearCart() {
-    saveCart([]);
-    displayMessage('Cart cleared successfully.', 'info');
-}
+window.removeFromCartAPI = async function(itemId) {
+    const token = getToken();
+    if (!token) { return; }
 
-/*
-  Updates the quantity of a specific item in the cart.
- */
-function updateCartItemQuantity(itemIdentifier, newQuantity) {
-    let cart = getCart();
-    
-    const item = cart.find(item => 
-        `${item.productId}-${item.size}-${item.scent}` === itemIdentifier
-    );
+    try {
+        const response = await fetch(`${window.BASE_URL}/api/cart/remove/${itemId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
 
-    if (item) {
-        item.quantity = newQuantity;
-        saveCart(cart);
+        const data = await response.json();
+
+        if (response.ok) {
+            window.displayMessage('Item removed from cart.', 'info');
+            if (window.fetchCart) window.fetchCart(); // Re-render cart page
+            window.updateCartCount(); 
+        } else {
+            window.displayMessage(`Removal failed: ${data.message || 'Server error.'}`, 'error');
+        }
+    } catch (error) {
+        console.error("Network error removing item:", error);
+        window.displayMessage('Network error. Could not remove item.', 'error');
     }
 }
 
-/*
-  Calculates the total price of all items in the cart.
-  @param {Array} cart - The cart array.
-  @returns {number} The total price.
+
+/**
+ * @desc Clears all items from the cart (DELETE /api/cart/clear)
  */
-function calculateCartTotal(cart) {
-    // Reduce the array to calculate the total sum (price * quantity)
-    return cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+window.clearCartAPI = async function() {
+    const token = getToken();
+    if (!token) { return; }
+
+    if (!confirm("Are you sure you want to clear your cart?")) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`${window.BASE_URL}/api/cart/clear`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            window.displayMessage('Cart cleared successfully.', 'info');
+            if (window.fetchCart) window.fetchCart(); 
+            window.updateCartCount(); 
+        } else {
+            window.displayMessage(`Clear cart failed: ${data.message || 'Server error.'}`, 'error');
+        }
+    } catch (error) {
+        console.error("Network error clearing cart:", error);
+        window.displayMessage('Network error. Could not clear cart.', 'error');
+    }
 }
 
-// Expose these core functions and constants globally so they can be called from other HTML files
-window.addToCart = addToCart;
-window.getCart = getCart;
-window.clearCart = clearCart;
-window.removeFromCart = removeFromCart;
-window.updateCartItemQuantity = updateCartItemQuantity;
+// --- Total Calculation and Cart Count ---
+
+function calculateCartTotal(cartItems) {
+    return cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+}
 window.calculateCartTotal = calculateCartTotal;
-window.displayMessage = displayMessage;
+
+
+/**
+ * @desc Updates the cart count shown in the header/nav bar
+ */
+window.updateCartCount = async function() {
+    const cartCountElement = document.getElementById('cart-count');
+    if (!cartCountElement) return;
+
+    try {
+        const cartItems = await window.getCartAPI();
+        const totalItems = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+        
+        cartCountElement.textContent = totalItems;
+        if (totalItems > 0) {
+            cartCountElement.classList.remove('hidden');
+        } else {
+            cartCountElement.classList.add('hidden');
+        }
+    } catch (error) {
+        cartCountElement.classList.add('hidden'); 
+        console.error("Could not update cart count:", error);
+    }
+}
+
+// --- Expose API functions using generic names for HTML compatibility ---
+window.getCart = window.getCartAPI; 
+window.addToCart = window.addToCartAPI;
+window.clearCart = window.clearCartAPI; 
+// Note: removeFromCart and updateCartItemQuantity are handled directly by cart.html script
