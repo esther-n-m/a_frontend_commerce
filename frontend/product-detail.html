@@ -392,7 +392,8 @@
             document.getElementById('product-name').textContent = product.name;
             document.getElementById('product-price').textContent = formatCurrency(product.price);
             document.getElementById('product-description').textContent = product.description;
-            document.getElementById('product-image').src = product.image;
+            document.getElementById('product-image').src = 
+                `${window.BASE_URL}/images/${product.image}`;
             document.getElementById('product-image').onerror = (e) => {
                 e.target.src = `https://placehold.co/600x600/181818/D4AF37?text=Image+Missing`;
             };
