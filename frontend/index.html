@@ -220,7 +220,7 @@ const fetchProducts = async () => {
         // Map products to HTML cards
         const productHtml = products.map(product => {
             // Ensure image path is correct (using images/)
-            const imageUrl = `${window.BASE_URL}${product.image}`; 
+            const imageUrl = `${window.BASE_URL}/images/${product.image}`;
             
             return `
                 <div class="product-card bg-[#1a1a1a] p-5 rounded-lg shadow-xl cursor-pointer transition transform hover:scale-[1.02]" 
