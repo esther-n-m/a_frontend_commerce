@@ -87,91 +87,70 @@
         </nav>
     </header>
 
-    <!-- Main Content Area -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <!-- Loading State -->
-        <div id="loading-state" class="text-center py-20">
-            <svg class="animate-spin h-10 w-10 text-gold mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <p id="loading-text" class="mt-4 text-gray-400">Loading product details...</p>
+    <div id="loading-state" class="text-center py-20">
+        <svg class="animate-spin h-10 w-10 text-gold mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <p id="loading-text" class="mt-4 text-gray-400">Loading product details...</p>
+    </div>
+
+    <div id="product-detail" class="hidden lg:grid lg:grid-cols-2 gap-10">
+        
+        <div id="product-image-container" class="lg:sticky lg:top-24 rounded-lg overflow-hidden shadow-2xl border border-gray-800">
+            <img id="product-image" class="w-full h-auto object-cover" 
+                 src="https://placehold.co/600x600/1a1a1a/d4af37?text=Product+Image" 
+                 alt="Placeholder Image for Product"
+                 onerror="this.onerror=null;this.src='https://placehold.co/600x600/1a1a1a/d4af37?text=Image+Not+Available'">
         </div>
+        <div id="product-info" class="pt-4 lg:pt-0">
+            <p id="product-category" class="text-sm uppercase tracking-widest text-gold mb-2"></p>
+            <h1 id="product-name" class="text-4xl lg:text-5xl font-extrabold mb-4 text-white"></h1>
+            <p id="product-price" class="text-3xl font-bold text-gold mb-6"></p>
 
-        <!-- Product Detail Content (Hidden initially) -->
-        <div id="product-detail" class="hidden lg:grid lg:grid-cols-2 gap-10">
-            
-            <!-- Product Image -->
-            <div id="product-image-container" class="lg:sticky lg:top-24 rounded-lg overflow-hidden shadow-2xl border border-gray-800">
-                <img id="product-img" class="w-full h-auto object-cover" 
-                     src="https://placehold.co/600x600/1a1a1a/d4af37?text=Product+Image" 
-                     alt="Placeholder Image for Product"
-                     onerror="this.onerror=null;this.src='https://placehold.co/600x600/1a1a1a/d4af37?text=Image+Not+Available'">
+            <div class="mb-8 border-t border-b border-gray-800 py-6">
+                <p class="text-gray-300 leading-relaxed" id="product-description"></p>
             </div>
 
-            <div id="product-image-section" class="w-full md:w-1/2 flex justify-center hidden">
-                <img id="product-image" src="" alt="Product Image" class="w-full h-auto object-cover rounded-lg shadow-2xl">
-            </div>
-
-            <!-- Product Details and Options -->
-            <div id="product-info" class="pt-4 lg:pt-0">
-                <!-- Product Metadata -->
-                <p id="product-category" class="text-sm uppercase tracking-widest text-gold mb-2"></p>
-                <h1 id="product-name" class="text-4xl lg:text-5xl font-extrabold mb-4 text-white"></h1>
-                <p id="product-price" class="text-3xl font-bold text-gold mb-6"></p>
-
-                <!-- Description -->
-                <div class="mb-8 border-t border-b border-gray-800 py-6">
-                    <p class="text-gray-300 leading-relaxed" id="product-description"></p>
+            <div id="product-options" class="space-y-6 mb-8">
                 </div>
 
-                <!-- Product Options (Dynamically Rendered) -->
-                <div id="product-options" class="space-y-6 mb-8">
-                    <!-- Options will be inserted here -->
-                </div>
-
-                <!-- Action Section -->
-                <div class="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-6">
-                    
-                    <!-- Quantity Controls -->
-                    <div class="flex items-center space-x-3 w-full sm:w-32 border border-gray-700 rounded-lg p-2 bg-[#1a1a1a]">
-                        <!-- FIX: Added title attribute for accessibility -->
-                        <button id="decrement-qty" 
-                                class="text-xl hover:text-gold transition duration-200" 
-                                aria-label="Decrease quantity" 
-                                title="Decrease quantity">-</button>
-                        
-                        <!-- FIX: Added title and placeholder attribute for accessibility/tooltips -->
-                        <input type="number" 
-                               id="qty-display" 
-                               value="1" 
-                               min="1" 
-                               class="w-full text-center bg-transparent border-none focus:ring-0 text-xl font-medium" 
-                               aria-label="Product quantity"
-                               title="Product quantity"
-                               placeholder="1"> 
-                        
-                        <!-- FIX: Added title attribute for accessibility -->
-                        <button id="increment-qty" 
-                                class="text-xl hover:text-gold transition duration-200" 
-                                aria-label="Increase quantity" 
-                                title="Increase quantity">+</button>
-                    </div>
-
-                    <!-- Add to Cart Button -->
-                    <button id="add-to-cart-btn" 
-                            class="btn-gold w-full sm:w-auto px-8 py-3 rounded-xl font-semibold uppercase text-sm disabled:opacity-50 disabled:cursor-not-allowed" 
-                            disabled>
-                        Add to Cart
-                    </button>
-                </div>
+            <div class="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-6">
                 
-                <!-- Availability/Stock Status -->
-                <p id="stock-status" class="mt-4 text-sm text-gray-500">In Stock</p>
+                <div class="flex items-center space-x-3 w-full sm:w-32 border border-gray-700 rounded-lg p-2 bg-[#1a1a1a]">
+                    <button id="decrement-qty" 
+                            class="text-xl hover:text-gold transition duration-200" 
+                            aria-label="Decrease quantity" 
+                            title="Decrease quantity">-</button>
+                    
+                    <input type="number" 
+                            id="qty-display" 
+                            value="1" 
+                            min="1" 
+                            class="w-full text-center bg-transparent border-none focus:ring-0 text-xl font-medium" 
+                            aria-label="Product quantity"
+                            title="Product quantity"
+                            placeholder="1"> 
+                    
+                    <button id="increment-qty" 
+                            class="text-xl hover:text-gold transition duration-200" 
+                            aria-label="Increase quantity" 
+                            title="Increase quantity">+</button>
+                </div>
 
+                <button id="add-to-cart-btn" 
+                        class="btn-gold w-full sm:w-auto px-8 py-3 rounded-xl font-semibold uppercase text-sm disabled:opacity-50 disabled:cursor-not-allowed" 
+                        disabled>
+                    Add to Cart
+                </button>
             </div>
+            
+            <p id="stock-status" class="mt-4 text-sm text-gray-500">In Stock</p>
+
         </div>
-    </main>
+    </div>
+</main>
 
     <!-- Footer (Optional) -->
     <footer class="mt-20 border-t border-gray-800 text-center py-6 text-sm text-gray-500">
