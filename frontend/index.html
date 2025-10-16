@@ -106,28 +106,29 @@
 
     <!-- Main Content: Hero Section -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <section class="text-center py-16 bg-[#141414] rounded-xl shadow-2xl border border-gray-800 mb-16">
-            <h1 class="text-5xl md:text-7xl font-bold mb-4 tracking-tight leading-tight">
-                The Art of <span class="text-gold">Refined Living</span>
-            </h1>
-            <p class="text-lg text-gray-400 max-w-3xl mx-auto mb-8">
-                Indulge in our exclusive collection of luxury pillows and hand-poured, artisanal candles. Elevate your sanctuary.
-            </p>
-            <a href="#product-grid-section" class="inline-block btn-gold px-8 py-3 rounded-full text-base font-semibold shadow-xl hover:shadow-gold/50 transition transform hover:scale-[1.02]">
-                Explore Collection
-            </a>
-        </section>
+    <section class="text-center py-16 bg-[#141414] rounded-xl shadow-2xl border border-gray-800 mb-16">
+        <h1 class="text-5xl md:text-7xl font-bold mb-4 tracking-tight leading-tight">
+            The Art of <span class="text-gold">Refined Living</span>
+        </h1>
+        <p class="text-lg text-gray-400 max-w-3xl mx-auto mb-8">
+            Indulge in our exclusive collection of luxury pillows and hand-poured, artisanal candles. Elevate your sanctuary.
+        </p>
+        <a href="#product-list-section" class="inline-block btn-gold px-8 py-3 rounded-full text-base font-semibold shadow-xl hover:shadow-gold/50 transition transform hover:scale-[1.02]">
+            Explore Collection
+        </a>
+    </section>
 
-        <!-- Product Grid Section -->
-        <section id="product-grid-section" class="pt-10">
-            <h2 class="text-3xl font-bold text-center mb-12 uppercase tracking-wider">Our Curated Selections</h2>
-            <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                <!-- Product Cards will be injected here by JavaScript -->
+    <section id="product-list-section" class="pt-10">
+        <h2 class="text-3xl font-light text-center mb-10 text-gold">Our Signature Collection</h2>
+        
+        <div id="product-list-container" 
+             class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             </div>
-            <!-- Loading/Error Message -->
-            <p id="loading-message" class="text-center text-gray-500 mt-10">Loading products...</p>
+
         </section>
-    </main>
+</main>
+
+    
 
     <!-- Footer -->
     <footer class="bg-[#141414] border-t border-gray-800 mt-12">
@@ -187,44 +188,69 @@
 
 
         
-        // CRITICAL CHANGE: This function  uses  deployed backend API
+        //  This function  uses  deployed backend API
+
+const fetchProducts = async () => {
+    // 1. Get the container element using the ID we added above
+    const productsContainer = document.getElementById('product-list-container'); 
+    
+    // CRITICAL FIX: Check if the element was found. If null, exit the function.
+    if (!productsContainer) {
+        console.error("CRITICAL ERROR: The product container 'product-list-container' was not found in the DOM.");
+        return; 
+    }
+
+    // Optional: Set a loading message while fetching
+    productsContainer.innerHTML = '<p class="text-center col-span-full text-white">Loading products...</p>'; 
+    
+    try {
+        const response = await fetch(`${window.BASE_URL}/api/products`);
         
-        const fetchProducts = async () => {
-            // Check if the BASE_URL is available from cart.js
-            if (typeof window.BASE_URL === 'undefined') {
-                document.getElementById('product-list').innerHTML = 
-                    `<div class="col-span-full py-10 text-center text-red-500">
-                        <p class="text-xl mb-4">Configuration Error</p>
-                        <p>The BASE_URL is not set. Please ensure 'cart.js' is loaded and defines window.BASE_URL.</p>
-                    </div>`;
-                return;
-            }
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const products = await response.json();
+
+        if (products.length === 0) {
+            productsContainer.innerHTML = '<p class="text-center col-span-full">No products found at this time.</p>';
+            return;
+        }
+
+        // Map products to HTML cards
+        const productHtml = products.map(product => {
+            // Ensure image path is correct (using images/ folder)
+            const imageUrl = `./images/${product.image}`; 
             
-            try {
-                // Fetch products from your deployed backend API (GET /api/products)
-                const response = await fetch(`${window.BASE_URL}/api/products`);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                
-                const products = await response.json(); 
-                
-                // Clear the loading message and render the new products
-                document.getElementById('product-list').innerHTML = ''; 
-                renderProducts(products); 
-                
-            } catch (error) {
-                console.error("Error fetching products from backend:", error);
-                // Display a detailed error message if the API is down
-                document.getElementById('product-list').innerHTML = 
-                    `<div class="col-span-full py-10 text-center text-gray-400">
-                        <p class="text-xl mb-4"> Products Unavailable</p>
-                        <p>Could not load products from the server: ${window.BASE_URL}.</p>
-                        <p class="text-sm mt-2 text-red-400">Please ensure your backend is running on Render and the URL in cart.js is correct.</p>
-                    </div>`;
-            }
-        };
+            return `
+                <div class="product-card bg-[#1a1a1a] p-5 rounded-lg shadow-xl cursor-pointer transition transform hover:scale-[1.02]" 
+                     data-product-id="${product.id}">
+                    <img src="${imageUrl}" alt="${product.name}" class="w-full h-48 object-cover rounded-md mb-4 hover:opacity-90">
+                    <h3 class="text-xl font-light text-white">${product.name}</h3>
+                    <p class="text-gold font-bold my-2">KSh ${product.price.toLocaleString('en-US')}</p>
+                    <button data-product-id="${product.id}" 
+                            data-product-name="${product.name}" 
+                            data-product-price="${product.price}" 
+                            data-product-image="${product.image}"
+                            class="add-to-cart-btn btn-gold w-full py-2 rounded-lg text-sm hover:bg-gold/80">
+                        Add to Cart
+                    </button>
+                </div>
+            `;
+        }).join('');
+
+        productsContainer.innerHTML = productHtml; 
+        
+        // After products are rendered, attach event listeners
+        attachProductEventListeners();
+
+    } catch (error) {
+        console.error("Error fetching products from backend:", error);
+        productsContainer.innerHTML = '<p class="text-center col-span-full text-red-400">Error fetching products. Please check your network or backend console.</p>';
+    }
+};
+
+// ... (Rest of the script, including attachProductEventListeners and DOMContentLoaded listener)
 
 
         // Attaches event listeners to all product cards and buttons after rendering
