@@ -161,12 +161,24 @@
     <!-- Script Block for Product Detail and Cart API Integration -->
     <script>
         const products = [
-            { id: 1, name: "Velvet Obsidian Pillow", price: 89.99, description: "A luxurious deep black velvet pillow, designed for maximum comfort and style. The perfect centerpiece for a sophisticated living space.", image: "https://placehold.co/600x600/181818/D4AF37?text=Velvet+Pillow", options: { size: ["Small", "Medium", "Large"] } },
-            { id: 2, name: "Ember Glow Candle", price: 34.50, description: "Hand-poured soy wax candle with a long, clean burn. The subtle aroma evokes feelings of warmth and ancient heritage.", image: "https://placehold.co/600x600/181818/D4AF37?text=Ember+Candle", options: { scent: ["Sandalwood & Clove", "Fig & Amber", "Smoke & Vanilla"] } },
-            { id: 3, name: "Royal Sateen Sheet Set", price: 199.00, description: "1000-thread count Egyptian cotton sateen sheets. Experience the ultimate in softness and breathability.", image: "https://placehold.co/600x600/181818/D4AF37?text=Sateen+Sheets", options: { size: ["Queen", "King"], color: ["Ivory", "Slate Gray"] } },
-            { id: 4, name: "Coastal Mist Diffuser", price: 45.00, description: "A ceramic diffuser with essential oils inspired by the morning ocean air. Naturally refreshes any room.", image: "https://placehold.co/600x600/181818/D4AF37?text=Mist+Diffuser", options: { scent: ["Bergamot & Sea Salt", "White Tea & Ginger"] } },
-            { id: 5, name: "Aged Leather Throw", price: 110.00, description: "A beautifully woven throw blanket that looks and feels like supple, aged leather. Perfect for a cozy evening.", image: "https://placehold.co/600x600/181818/D4AF37?text=Leather+Throw", options: { color: ["Dark Roast", "Charcoal", "Cream"] } }
-        ];
+    // Row 1
+    { id: 1, name: "White Bow-Tie Pillow", price: 13.85, description: "A set of two soft white pillows tied in a bow, featuring a subtle decorative pattern. Elegant and classic.", image: "https://placehold.co/600x600/181818/D4AF37?text=Bow-Tie+Pillow", options: { size: ["Small", "Medium"], material: ["Cotton", "Linen"] } },
+    { id: 2, name: "Red Monkey Fist Knot", price: 21.54, description: "A large, tightly woven red nautical knot used as a decorative object or paperweight, adding a pop of color.", image: "https://placehold.co/600x600/181818/D4AF37?text=Monkey+Fist", options: { color: ["Red", "Burgundy"] } },
+    { id: 3, name: "Set of Round Decorative Pillows", price: 25.38, description: "A set of round, textured pillows in varying colors (gray, yellow, black) for a modern, eclectic look.", image: "https://placehold.co/600x600/181818/D4AF37?text=Round+Pillows", options: { set: ["3-Piece", "5-Piece"] } },
+    { id: 4, name: "Yellow Lumbar Pillow (Butterfly)", price: 13.85, description: "A bright yellow lumbar pillow featuring a detailed butterfly design, perfect for back support and vibrant decor.", image: "https://placehold.co/600x600/181818/D4AF37?text=Butterfly+Pillow", options: { size: ["Standard", "Large"], color: ["Yellow", "Gold"] } },
+    
+    // Row 2
+    { id: 5, name: "Sausage and Round Set (Gold)", price: 17.69, description: "A coordinated set of gold-toned decorative pillows (one cylindrical, one round) with textural patterns.", image: "https://placehold.co/600x600/181818/D4AF37?text=Gold+Pillow+Set", options: { size: ["Small", "Medium"] } },
+    { id: 6, name: "Orange Square Faith Pillow", price: 10.00, description: "A square orange pillow with bold white text reading 'LIVING IN FAITH EVERYDAY'.", image: "https://placehold.co/600x600/181818/D4AF37?text=Faith+Pillow", options: { color: ["Orange", "Terracotta"] } },
+    { id: 7, name: "Succulent Scent Decor Candle", price: 10.00, description: "A scented candle in a ceramic pot, featuring a green succulent plant theme for a natural, fresh look.", image: "https://placehold.co/600x600/181818/D4AF37?text=Succulent+Candle", options: { scent: ["Cactus Flower", "Garden Mint"] } },
+    { id: 8, name: "Romantic Rose Vanilla Candle", price: 7.31, description: "A simple, white pillar candle with a sweet and delicate rose and vanilla aroma for a calming atmosphere.", image: "https://placehold.co/600x600/181818/D4AF37?text=Rose+Vanilla+Candle", options: { size: ["Small", "Medium", "Large"] } },
+    
+    // Row 3
+    { id: 9, name: "Purple & Blue Chevron Candle", price: 6.15, description: "A small glass jar candle with vibrant purple and blue chevron layers and a bright floral scent.", image: "https://placehold.co/600x600/181818/D4AF37?text=Chevron+Candle", options: { scent: ["Sweet Berry", "Tropical"] } },
+    { id: 10, name: "Citrus & Lime Jar Candle", price: 10.00, description: "A brown jar candle with a strong, zesty citrus and lime fragrance to refresh any kitchen or living area.", image: "https://placehold.co/600x600/181818/D4AF37?text=Citrus+Jar+Candle", options: { scent: ["Lime", "Lemon Verbena"] } },
+    { id: 11, name: "Heart-Shaped Gem Candle Set", price: 10.00, description: "A set of small, colorful heart-shaped candles resembling gems, ideal for bath time or small decorative accents.", image: "https://placehold.co/600x600/181818/D4AF37?text=Gem+Candle+Set", options: { set: ["6-Pack", "12-Pack"], color: ["Mixed", "Pastel"] } },
+    { id: 12, name: "White & Purple Layered Candle", price: 7.31, description: "A white pillar candle with a bright purple outer layer, offering a strong, clean scent.", image: "https://placehold.co/600x600/181818/D4AF37?text=Purple+Layered", options: { scent: ["Floral Bloom", "Powder"], size: ["Medium", "Large"] } }
+];
 
         let productData = null;
         let selectedOptions = {};
