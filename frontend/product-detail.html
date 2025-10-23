@@ -170,8 +170,8 @@
         let productData = null;
         let selectedOptions = {};
 
-        const BASE_URL = '';
-        const API_CART_URL = `${BASE_URL}/api/cart/add`;
+        //const BASE_URL = '';
+        //const API_CART_URL = `${BASE_URL}/api/cart/add`;
 
         // Elements
         const loadingState = document.getElementById('loading-state');
@@ -197,6 +197,8 @@
          * @param {string} message - The message content.
          * @param {string} type - 'success', 'error', or 'info'.
          */
+
+         /*
         window.displayMessage = (message, type = 'info') => {
             const container = document.getElementById('message-container');
             if (!container) return;
@@ -214,7 +216,7 @@
             setTimeout(() => {
                 container.classList.remove('show');
             }, 3000);
-        };
+        }; */
 
         /**
          * Checks if all required options are selected and updates the Add to Cart button state.
@@ -247,6 +249,7 @@
         /**
          * Fetches the current cart from the server to get the item count for the header.
          */
+        /*
         window.updateCartCount = async () => {
             try {
                 const response = await fetch(API_CART_URL, {
@@ -268,50 +271,34 @@
                 // Ignore API error for count, as it shouldn't stop the page from loading
                 console.warn("Could not fetch cart count:", e); 
             }
-        };
+        }; */
 
         /**
          * Sends item data to the server to add or update an item in the user's cart.
          * This replaces the old local 'addToCart' function.
          */
-        const addToCartAPI = async () => {
+       const addToCartAPI = async () => {
             if (!productData) return;
 
-            // 1. Create the payload for the API (must match cartController's expectation)
+            // FIX: Ensure name and price are included as required by cart.js payload
             const payload = {
                 productId: productData.id,
+                name: productData.name, 
+                price: productData.price,
                 quantity: parseInt(qtyDisplay.value),
-                // Extract size and scent from the generic selectedOptions object
                 size: selectedOptions.size || null,
                 scent: selectedOptions.scent || null
-                // Note: The controller handles the uniqueness of the item
             };
 
             addToCartBtn.disabled = true;
             addToCartBtn.textContent = 'Adding...';
 
             try {
-                const response = await fetch(API_CART_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${getToken()}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payload),
-                });
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.message || 'Server failed to add item to cart.');
-                }
-
-                window.displayMessage('Item added/updated in cart successfully!', 'success');
-                window.updateCartCount(); // Update the count after success
+                // Call the globally exposed function from cart.js (which uses the correct API endpoint)
+                await window.addToCartAPI(payload);
 
             } catch (e) {
-                console.error("Error adding to cart:", e);
-                window.displayMessage(e.message || 'Failed to add item. Are you logged in and is the backend running?', 'error');
+                console.error("Error adding to cart (local handler):", e);
             } finally {
                 addToCartBtn.disabled = false;
                 checkOptionsAndToggleCartButton(); // Reset button text
