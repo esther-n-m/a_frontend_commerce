@@ -151,7 +151,7 @@
                 <img src="${product.image}" alt="${product.name}" class="w-full h-64 object-cover">
                 <div class="p-6">
                     <h3 class="text-xl font-semibold text-white truncate">${product.name}</h3>
-                    <p class="text-gold mt-1 font-bold">Ksh ${product.price.toFixed(2)}</p>
+                    <p class="text-gold mt-1 font-bold">${window.formatCurrency(product.price)}</p>
                     <p class="text-gray-400 text-sm mt-2">${product.description || 'Elevate your space with refined comfort.'}</p>
                     <button 
                         class="mt-4 w-full btn-gold py-2 rounded-md font-semibold text-sm"
@@ -227,7 +227,7 @@ const fetchProducts = async () => {
                      data-product-id="${product.id}">
                     <img src="${imageUrl}" alt="${product.name}" class="w-full h-48 object-cover rounded-md mb-4 hover:opacity-90">
                     <h3 class="text-xl font-light text-white">${product.name}</h3>
-                    <p class="text-gold font-bold my-2">KSh ${product.price.toLocaleString('en-US')}</p>
+                    <p class="text-gold font-bold my-2">${window.formatCurrency(product.price)}</p>
                     <button data-product-id="${product.id}" 
                             data-product-name="${product.name}" 
                             data-product-price="${product.price}" 

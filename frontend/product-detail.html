@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sovereign Home | Product Detail</title>
     <!-- Load Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="/css/main.css" rel="stylesheet">
     <!-- Use an elegant, sophisticated font like Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
     <style>
@@ -211,85 +211,26 @@
          * @param {string} type - 'success', 'error', or 'info'.
          */
 
-         /*
-        window.displayMessage = (message, type = 'info') => {
-            const container = document.getElementById('message-container');
-            if (!container) return;
 
-            let classes = "message-box show p-4 rounded-lg shadow-xl text-white font-medium ";
-            switch (type) {
-                case 'success': classes += 'bg-green-600'; break;
-                case 'error': classes += 'bg-red-600'; break;
-                case 'info': default: classes += 'bg-blue-600'; break;
-            }
-
-            container.className = classes;
-            container.textContent = message;
-
-            setTimeout(() => {
-                container.classList.remove('show');
-            }, 3000);
-        }; */
-
-        /**
-         * Checks if all required options are selected and updates the Add to Cart button state.
-         */
         const checkOptionsAndToggleCartButton = () => {
-            if (!productData || !productData.options) return;
-            
-            const requiredOptions = Object.keys(productData.options);
-            const allSelected = requiredOptions.every(key => selectedOptions[key]);
+    if (!productData || !productData.options) return;
+    
+    const requiredOptions = Object.keys(productData.options);
+    const allSelected = requiredOptions.every(key => selectedOptions[key]);
 
-            addToCartBtn.disabled = !allSelected;
-            if (allSelected) {
-                addToCartBtn.textContent = `Add to Cart - ${formatCurrency(productData.price * parseInt(qtyDisplay.value))}`;
-            } else {
-                addToCartBtn.textContent = "Select Options to Add to Cart";
-            }
-        };
+    addToCartBtn.disabled = !allSelected;
+    if (allSelected) {
+    // 1. Calculate total price outside the template literal for clarity
+    const totalPrice = productData.price * parseInt(qtyDisplay.value);
+    
+    // 2. Use the correct global KSh formatting function
+    addToCartBtn.textContent = `Add to Cart - ${window.formatCurrency(totalPrice)}`;
+} else {
+    addToCartBtn.textContent = "Select Options to Add to Cart";
+}
+};
         
-        /**
-         * Formats a number to a currency string.
-         * @param {number} amount
-         * @returns {string}
-         */
-        const formatCurrency = (amount) => {
-            return `$${Number(amount).toFixed(2)}`;
-        };
-
-        // --- API Calls ---
-        
-        /**
-         * Fetches the current cart from the server to get the item count for the header.
-         */
-        /*
-        window.updateCartCount = async () => {
-            try {
-                const response = await fetch(API_CART_URL, {
-                    method: 'GET',
-                    headers: { 'Authorization': `Bearer ${getToken()}` },
-                });
-
-                const cart = await response.json();
-                
-                // Calculate total quantity of items
-                const items = cart.items || [];
-                const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-                
-                const cartCountEl = document.getElementById('cart-count');
-                if (cartCountEl) {
-                    cartCountEl.textContent = totalItems;
-                }
-            } catch (e) {
-                // Ignore API error for count, as it shouldn't stop the page from loading
-                console.warn("Could not fetch cart count:", e); 
-            }
-        }; */
-
-        /**
-         * Sends item data to the server to add or update an item in the user's cart.
-         * This replaces the old local 'addToCart' function.
-         */
+      
        const addToCartAPI = async () => {
             if (!productData) return;
 
