@@ -15,6 +15,17 @@ function getToken() {
     return localStorage.getItem('userToken'); 
 }
 
+//  checkAuthAndRedirect 
+function checkAuthAndRedirect() {
+    if (!getToken()) {
+        // Redirect to the login/register page if the token is missing
+        window.location.href = 'auth.html';
+        return false; // Indicates redirection is happening
+    }
+    return true; // Indicates token is present
+}
+window.checkAuthAndRedirect = checkAuthAndRedirect; // Expose globally 
+
 // Utility for UI Feedback (Must be defined globally for all pages)
 function displayMessage(message, type = 'default') {
     const container = document.getElementById('message-container');
