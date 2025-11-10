@@ -333,23 +333,44 @@
         /**
          * Fetches product data based on the URL parameter and renders the page.
          */
-        const fetchAndRenderProduct = () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const productId = parseInt(urlParams.get('id'));
+        /**
+ * Fetches product data from the API and renders the details.
+ * NOTE: Assumes window.BASE_URL is defined in cart.js.
+ */
+const fetchAndRenderProduct = async () => {
+    // 1. Get Product ID from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const productId = parseInt(urlParams.get('id'), 10);
+    const loadingTextElement = document.getElementById('loading-text');
 
-            if (!productId) {
-                document.getElementById('loading-text').textContent = "Error: No product ID specified in the URL.";
-                return;
-            }
+    if (!productId) {
+        loadingTextElement.textContent = "Error: No product ID specified in the URL.";
+        return;
+    }
+    
+    // 2. Construct API URL and Fetch Data
+    const productUrl = `${window.BASE_URL}/api/products/${productId}`;
 
-            productData = products.find(p => p.id === productId);
+    try {
+        const response = await fetch(productUrl);
+        const productData = await response.json();
 
-            if (productData) {
-                renderProduct(productData);
-            } else {
-                document.getElementById('loading-text').textContent = `Error: Product with ID ${productId} not found.`;
-            }
-        };
+        if (response.ok && productData.id) {
+            // 3. Success: Render the product details
+            renderProduct(productData);
+        } else if (response.status === 404) {
+            // 4. Product Not Found (e.g., ID is valid but product doesn't exist)
+            loadingTextElement.textContent = `Error: Product with ID ${productId} not found.`;
+        } else {
+            // 5. Other Server Error
+             loadingTextElement.textContent = `Error loading product details. Status: ${response.status}`;
+        }
+        
+    } catch (error) {
+        console.error("Network or parsing error:", error);
+        loadingTextElement.textContent = "A network error occurred while trying to load the product.";
+    }
+};
 
         // --- Event Listeners and Initialization ---
 
