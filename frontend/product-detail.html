@@ -266,49 +266,80 @@
         /**
          * Renders the options section (Size, Scent, etc.).
          */
-        const renderOptions = (options) => {
-            optionsContainer.innerHTML = ''; // Clear previous options
-            Object.keys(options).forEach(optionKey => {
-                const values = options[optionKey];
-                const keyTitle = optionKey.charAt(0).toUpperCase() + optionKey.slice(1);
-                
-                const optionGroup = document.createElement('div');
-                optionGroup.className = 'flex flex-col space-y-2';
-                optionGroup.innerHTML = `<span class="font-semibold text-lg text-gold">${keyTitle}:</span>`;
+        /**
+ * Renders the options section (Size, Scent, etc.).
+ * This function is robust and dynamic, handling any option type provided.
+ */
+const renderOptions = (options) => {
+    // CRITICAL FIX: Get the options container element
+    const optionsContainer = document.getElementById('product-options-container');
+    if (!optionsContainer) {
+        console.error("Error: Element with ID 'product-options-container' not found.");
+        return; // Exit if the container isn't in the HTML
+    }
+    
+    optionsContainer.innerHTML = ''; // Clear previous options
 
-                const valuesContainer = document.createElement('div');
-                valuesContainer.className = 'flex flex-wrap gap-3';
-                
-                values.forEach(value => {
-                    const button = document.createElement('button');
-                    button.textContent = value;
-                    button.className = `option-button px-4 py-2 rounded-lg text-sm bg-neutral-800 text-white hover:bg-neutral-700`;
-                    button.setAttribute('data-key', optionKey);
-                    button.setAttribute('data-value', value);
+    // Check if options object is valid and has keys
+    if (!options || Object.keys(options).length === 0) {
+        // If there are no options, do nothing or display a message
+        // Optionally, ensure the Add to Cart button is enabled here if no options are required.
+        checkOptionsAndToggleCartButton(); 
+        return;
+    }
 
-                    button.addEventListener('click', () => {
-                        // Deselect all buttons for this option group
-                        valuesContainer.querySelectorAll('.option-button').forEach(btn => {
-                            btn.classList.remove('selected');
-                        });
-                        
-                        // Select the current button
-                        button.classList.add('selected');
-                        
-                        // Update the selected options state
-                        selectedOptions[optionKey] = value;
-                        checkOptionsAndToggleCartButton();
-                    });
-                    
-                    valuesContainer.appendChild(button);
+    // Loop through each option type (e.g., 'size', 'scent')
+    Object.keys(options).forEach(optionKey => {
+        const values = options[optionKey];
+        
+        // Skip rendering if the option array is empty
+        if (!values || values.length === 0) return;
+
+        // Capitalize the option key for display ('scent' -> 'Scent')
+        const keyTitle = optionKey.charAt(0).toUpperCase() + optionKey.slice(1);
+        
+        const optionGroup = document.createElement('div');
+        optionGroup.className = 'flex flex-col space-y-2 mb-4'; // Added margin-bottom
+        optionGroup.innerHTML = `<span class="font-semibold text-lg text-gold">${keyTitle}:</span>`;
+
+        const valuesContainer = document.createElement('div');
+        valuesContainer.className = 'flex flex-wrap gap-3';
+        
+        // Loop through each option value (e.g., 'Vanilla Bean', 'Sandalwood')
+        values.forEach(value => {
+            const button = document.createElement('button');
+            button.textContent = value;
+            button.className = `option-button px-4 py-2 rounded-lg text-sm bg-neutral-800 text-white hover:bg-neutral-700 transition-colors duration-200`;
+            button.setAttribute('data-key', optionKey);
+            button.setAttribute('data-value', value);
+
+            button.addEventListener('click', (e) => {
+                // Deselect all buttons for this option group (using the data-key attribute)
+                const buttonsInGroup = valuesContainer.querySelectorAll(`[data-key="${optionKey}"]`);
+                buttonsInGroup.forEach(btn => {
+                    btn.classList.remove('selected', 'bg-gold', 'text-black');
+                    btn.classList.add('bg-neutral-800', 'text-white');
                 });
-
-                optionGroup.appendChild(valuesContainer);
-                optionsContainer.appendChild(optionGroup);
+                
+                // Select the current button
+                e.currentTarget.classList.add('selected', 'bg-gold', 'text-black');
+                e.currentTarget.classList.remove('bg-neutral-800', 'text-white');
+                
+                // Update the selected options state
+                window.selectedOptions[optionKey] = value; // Use window or ensure selectedOptions is global
+                window.checkOptionsAndToggleCartButton();
             });
-            // Initial check to disable button if options are required
-            checkOptionsAndToggleCartButton(); 
-        };
+            
+            valuesContainer.appendChild(button);
+        });
+
+        optionGroup.appendChild(valuesContainer);
+        optionsContainer.appendChild(optionGroup);
+    });
+
+    // Initial check to disable button if options are required
+    window.checkOptionsAndToggleCartButton(); 
+};
 
         /**
          * Renders the main product details.
