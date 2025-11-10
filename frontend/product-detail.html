@@ -231,34 +231,48 @@
 };
         
       
-       const addToCartAPI = async () => {
-            if (!productData) return;
+  const addToCartAPI = async () => {
+    if (!productData) return;
 
-            // FIX: Ensure name and price are included as required by cart.js payload
-            const payload = {
-                productId: productData.id,
-                name: productData.name, 
-                price: productData.price,
-                quantity: parseInt(qtyDisplay.value),
-                image: productData.image,
-                size: selectedOptions.size || null,
-                scent: selectedOptions.scent || null
-            };
+    // Use robust quantity parsing (default to 1 if not a valid number)
+    const quantity = parseInt(qtyDisplay.value, 10) || 1; 
 
-            addToCartBtn.disabled = true;
-            addToCartBtn.textContent = 'Adding...';
+    const payload = {
+        productId: productData.id,
+        name: productData.name, 
+        price: productData.price,
+        quantity: quantity,
+        image: productData.image,
+        // Use window.selectedOptions for consistency
+        size: window.selectedOptions.size || null,
+        scent: window.selectedOptions.scent || null
+    };
 
-            try {
-                // Call the globally exposed function from cart.js (which uses the correct API endpoint)
-                await window.addToCartAPI(payload);
+    addToCartBtn.disabled = true;
+    addToCartBtn.textContent = 'Adding...';
 
-            } catch (e) {
-                console.error("Error adding to cart (local handler):", e);
-            } finally {
-                addToCartBtn.disabled = false;
-                checkOptionsAndToggleCartButton(); // Reset button text
-            }
-        };
+    try {
+        // Call the globally exposed function from cart.js
+        // This line only proceeds if the API call was successful
+        await window.addToCartAPI(payload);
+
+        
+        window.location.href = 'cart.html';
+
+    } catch (e) {
+        // The global API handler (window.addToCartAPI) should display the error message.
+        console.error("Error adding to cart (local handler):", e);
+        // The button will be re-enabled in the finally block.
+    } finally {
+        // This block will run after 'try' (if successful) OR 'catch' (if failed).
+        // Since we redirect on success, we only need to reset the button if an error occurs
+        // or if the redirect fails for some reason.
+        if (window.location.href.indexOf('cart.html') === -1) {
+            addToCartBtn.disabled = false;
+            checkOptionsAndToggleCartButton(); // Reset button text
+        }
+    }
+};
 
 
         // --- Render Functions ---
@@ -362,13 +376,7 @@ const renderOptions = (options) => {
             productInfoSection.classList.remove('hidden');
         };
 
-        /**
-         * Fetches product data based on the URL parameter and renders the page.
-         */
-        /**
- * Fetches product data from the API and renders the details.
- * NOTE: Assumes window.BASE_URL is defined in cart.js.
- */
+     
 const fetchAndRenderProduct = async () => {
     // 1. Get Product ID from URL
     const urlParams = new URLSearchParams(window.location.search);
