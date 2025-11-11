@@ -7,7 +7,7 @@
     <link href="/css/main.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     
-    <style>
+    <!-- <style>
         :root {
             --color-gold: #D4AF37;
         }
@@ -58,7 +58,7 @@
             z-index: 50;
             max-width: 300px;
         }
-    </style>
+    </style> -->
     <!-- Assuming cart.js is included or its functions are globally available -->
     <script src="./cart.js"></script>
 </head>
@@ -280,9 +280,10 @@
                         window.displayMessage(`SUCCESS! STK Push sent to your phone. Complete transaction on your device. (TX ID: ${data.transactionId})`, 'success');
                         
                         // Clear the cart on the backend after successful payment
-                        if (typeof window.clearCart === 'function') {
-                            window.clearCart(); 
-                        }
+                        if (typeof window.clearCartAPI === 'function') 
+                        { window.clearCartAPI(); 
+                            // FIX: Call the correct function exposed by cart.js }
+                    }
 
                     } else {
                         // Handle failure responses

@@ -26,20 +26,22 @@ function formatCurrency(amount) {
 }
 window.formatCurrency = formatCurrency; // Expose globally
 
-function getToken() {
+/*function getToken() {
     // Fetches the JWT token stored by auth.html after successful login
     return localStorage.getItem('userToken'); 
-}
+}*/
 
-//  checkAuthAndRedirect 
-function checkAuthAndRedirect() {
-    if (!getToken()) {
-        // Redirect to the login/register page if the token is missing
-        window.location.href = 'auth.html';
-        return false; // Indicates redirection is happening
-    }
-    return true; // Indicates token is present
-}
+// checkAuthAndRedirect 
+// This function can't reliably check for a secure HttpOnly cookie. 
+// You should rely on the API calls themselves to return a 401 error, 
+// or write a dedicated function to check a protected route. 
+ // For now, let's simplify to prevent the crash. 
+function checkAuthAndRedirect() { 
+    /* Remove or rewrite this check, as the frontend cannot read the secure token. To prevent a crash: */
+     return true; 
+     // Allows the page to load and rely on API calls to fail/redirect
+      }
+
 window.checkAuthAndRedirect = checkAuthAndRedirect; // Expose globally 
 
 // Utility for UI Feedback (Must be defined globally for all pages)
@@ -74,18 +76,19 @@ window.displayMessage = displayMessage;
  * @returns {Array} Array of cart items or empty array on failure/no token
  */
 window.getCartAPI = async function() {
-    const token = getToken();
-    if (!token) {
-        // If no token, user is not logged in.
-        return []; 
-    }
+    // const token = getToken();
+    // if (!token) {
+    //     // If no token, user is not logged in.
+    //     return []; 
+    // }
 
     try {
         const response = await fetch(`${window.BASE_URL}/api/cart`, {
             method: 'GET',
             headers: {
-                'Authorization': `Bearer ${token}`
-            }
+                'Content-Type': 'application/json' 
+            },
+            
         });
 
         if (response.ok) {
@@ -114,11 +117,11 @@ window.getCartAPI = async function() {
  * @param {object} item - { productId, name, price, quantity, size, scent }
  */
 window.addToCartAPI = async function(item) {
-    const token = getToken();
-    if (!token) {
-        window.displayMessage('Please log in to add items to your cart.', 'error');
-        return;
-    }
+    // const token = getToken();
+    // if (!token) {
+    //     window.displayMessage('Please log in to add items to your cart.', 'error');
+    //     return;
+    // }
 
     // The backend's /api/cart/add expects: productId, name, price, quantity, size, scent
     const payload = {
@@ -136,8 +139,7 @@ window.addToCartAPI = async function(item) {
         const response = await fetch(`${window.BASE_URL}/api/cart/add`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                'Content-Type': 'application/json' 
             },
             body: JSON.stringify(payload)
         });
@@ -163,16 +165,16 @@ window.addToCartAPI = async function(item) {
  * @param {number} newQuantity 
  */
 window.updateCartItemAPI = async function(itemId, newQuantity) {
-    const token = getToken();
-    if (!token) { return; } 
+    // const token = getToken();
+    // if (!token) { return; } 
 
     try {
         const response = await fetch(`${window.BASE_URL}/api/cart/update`, {
             method: 'PUT',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                'Content-Type': 'application/json' 
             },
+            
             body: JSON.stringify({ itemId, quantity: newQuantity })
         });
         
@@ -198,15 +200,16 @@ window.updateCartItemAPI = async function(itemId, newQuantity) {
  * @param {string} itemId - The MongoDB _id of the item in the cart array.
  */
 window.removeFromCartAPI = async function(itemId) {
-    const token = getToken();
-    if (!token) { return; }
+    // const token = getToken();
+    // if (!token) { return; }
 
     try {
         const response = await fetch(`${window.BASE_URL}/api/cart/remove/${itemId}`, {
             method: 'DELETE',
             headers: {
-                'Authorization': `Bearer ${token}`
-            }
+                'Content-Type': 'application/json' 
+            },
+            
         });
 
         const data = await response.json();
@@ -229,8 +232,8 @@ window.removeFromCartAPI = async function(itemId) {
  * @desc Clears all items from the cart (DELETE /api/cart/clear)
  */
 window.clearCartAPI = async function() {
-    const token = getToken();
-    if (!token) { return; }
+    // const token = getToken();
+    // if (!token) { return; }
 
     if (!confirm("Are you sure you want to clear your cart?")) {
         return;
@@ -240,8 +243,8 @@ window.clearCartAPI = async function() {
         const response = await fetch(`${window.BASE_URL}/api/cart/clear`, {
             method: 'DELETE',
             headers: {
-                'Authorization': `Bearer ${token}`
-            }
+                'Content-Type': 'application/json' 
+            },
         });
 
         const data = await response.json();

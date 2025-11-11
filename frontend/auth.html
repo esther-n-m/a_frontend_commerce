@@ -8,7 +8,7 @@
     <link href="/css/main.css" rel="stylesheet">
     <!-- Use an elegant, sophisticated font like Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
-    <style>
+    <!--<style>
         :root {
             --color-gold: #D4AF37;
         }
@@ -65,7 +65,7 @@
         .message-box.show {
             opacity: 1;
         }
-    </style>
+    </style> -->
 </head>
 <body>
     <!-- Message Box Container -->
@@ -225,7 +225,7 @@
                     displayMessage(`Welcome back, ${data.user.name || 'User'}! Redirecting...`, 'success');
                     
                     // CRITICAL FIX: Store the token for subsequent protected API calls (Cart, Profile)
-                    localStorage.setItem('userToken', data.token); 
+                    //localStorage.setItem('userToken', data.token); 
                     
                     setTimeout(() => {
                         window.location.href = 'index.html'; 
@@ -275,7 +275,7 @@
                     displayMessage('Registration successful! You are now logged in. Redirecting...', 'success');
                     
                     // CRITICAL FIX: Store the token for subsequent protected API calls (Cart, Profile)
-                    localStorage.setItem('userToken', data.token); 
+                    //localStorage.setItem('userToken', data.token); 
                     
                     setTimeout(() => {
                         window.location.href = 'index.html'; 
