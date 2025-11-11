@@ -1,4 +1,35 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* LUXURIOUS THEME ENHANCEMENTS 
+*/
+
+@layer base {
+  body {
+    /* Apply font, dark background color, and light text from Tailwind config */
+    @apply font-inter bg-primary-bg text-text-light min-h-screen;
+    
+    /* Radial gradient for a subtle, dramatic depth effect (dark center, darker edges) */
+    background: radial-gradient(circle at center, theme('colors.secondary-bg') 0%, theme('colors.primary-bg') 100%);
+  }
+}
+
+@layer components {
+  /* Style for a high-contrast, premium call-to-action button */
+  .btn-gold {
+    @apply bg-gold text-primary-bg font-semibold py-3 px-6 rounded-lg transition-all duration-300 ease-in-out border border-transparent;
+  }
+  
+  .btn-gold:hover {
+    @apply bg-gold-hover;
+    /* Subtle gold shadow for a lifted, premium effect on hover */
+    box-shadow: 0 4px 15px 0 rgba(212, 175, 55, 0.4); 
+  }
+
+  /* Style for card containers (products, form boxes) */
+  .card-luxury {
+    /* Subtle background and border for a premium box effect */
+    @apply bg-secondary-bg border border-gold/20 rounded-xl shadow-2xl shadow-primary-bg/50 p-6;
+  }
+}
