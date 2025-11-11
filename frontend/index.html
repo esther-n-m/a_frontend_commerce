@@ -59,6 +59,20 @@
     </style> -->
     <!-- Load shared cart logic -->
     <script type="module" src="./js/cart.js"></script>
+    <script>
+    // --- Mobile Menu Toggle Script ---
+    // Ensure your hamburger button has id="mobile-menu-button" 
+    // and your menu panel has id="mobile-menu"
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+
+    if (mobileMenuButton && mobileMenu) {
+        mobileMenuButton.addEventListener('click', () => {
+            // Toggles the 'hidden' class on the menu panel
+            mobileMenu.classList.toggle('hidden');
+        });
+    }
+</script>
 </head>
 <body>
     <!-- Message Container (for accessibility feedback) -->

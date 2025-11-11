@@ -151,166 +151,158 @@
     </div>
 
     <script>
-        // --- Dependencies ---
-        // Assumes cart.js is loaded and exposes:
-        // window.getCartAPI, window.calculateCartTotal, window.displayMessage, window.clearCart
+        // Use the global BASE_URL defined in cart.js
+        const PAY_API = `${window.BASE_URL}/api/mpesa/pay`;
+        
+        // State management for cart data
+        let currentCart = { items: [], total: 0 }; 
 
-        // --- DOM Elements ---
-        const cartSummaryContainer = document.getElementById('cart-summary-items');
-        const subtotalElement = document.getElementById('subtotal');
-        const grandTotalElement = document.getElementById('grand-total');
-        const payButton = document.getElementById('pay-btn');
+        // DOM elements
+        const cartItemsContainer = document.getElementById('cart-items-review');
+        const finalTotalElement = document.getElementById('final-total');
+        const payButton = document.getElementById('pay-button');
         const loadingMessage = document.getElementById('loading-message');
-        const checkoutForm = document.getElementById('checkout-form');
-        const phoneInput = document.getElementById('phone');
-
-        // Store current cart items globally to send in payment payload
-        let currentCartItems = []; 
-
+        const paymentForm = document.getElementById('payment-form');
 
         /**
-         * @desc Fetches the cart from the API and renders the summary.
+         * Renders the cart items and total on the checkout page.
          */
         const renderCartItems = async () => {
-            cartSummaryContainer.innerHTML = '<p class="text-center py-4 text-gold">Loading cart summary...</p>';
-            payButton.disabled = true;
-
-            // Check if required functions are loaded
-            if (typeof window.getCartAPI !== 'function' || !localStorage.getItem('userToken')) {
-                cartSummaryContainer.innerHTML = '<p class="text-center py-4 text-red-400">Please log in to proceed to checkout.</p>';
-                grandTotalElement.textContent = 'Ksh 0.00';
-                subtotalElement.textContent = 'Ksh 0.00';
-                return;
-            }
-
+            cartItemsContainer.innerHTML = '';
+            
             try {
-                const items = await window.getCartAPI();
-                currentCartItems = items; 
+                // Get the latest cart data from the API
+                const cart = await window.getCartAPI();
+                currentCart = cart; // Store the official cart data
                 
-                if (items.length === 0) {
-                    cartSummaryContainer.innerHTML = '<p class="text-center py-4 text-gray-400">Your cart is empty. <a href="index.html" class="text-gold hover:text-white">Go shopping!</a></p>';
-                    grandTotalElement.textContent = 'Ksh 0.00';
-                    subtotalElement.textContent = 'Ksh 0.00';
+                if (!cart.items || cart.items.length === 0) {
+                    cartItemsContainer.innerHTML = `<p class="text-gray-400 text-center py-4">Your cart is empty. Please return to the cart page.</p>`;
+                    finalTotalElement.textContent = window.formatCurrency(0);
+                    payButton.disabled = true;
                     return;
                 }
 
-                // Calculate totals
-                const subtotal = window.calculateCartTotal(items);
-                // Assuming no shipping/tax for simplicity; total equals subtotal
-                const grandTotal = subtotal; 
+                // Map the populated items (productId is now the full product object)
+                cart.items.forEach(item => {
+                    // CRITICAL: Access product details via item.productId (due to Mongoose Population)
+                    const product = item.productId;
+                    if (!product) return; // Skip if product population failed
 
-                // Render items
-                cartSummaryContainer.innerHTML = items.map(item => `
-                    <div class="flex justify-between text-sm py-1">
-                        <span class="text-gray-400">${item.name} (${item.quantity}x)</span>
-                        <span class="font-medium text-white">${window.formatCurrency(item.price * item.quantity)}</span>git
-                    </div>
-                `).join('');
+                    const itemElement = document.createElement('div');
+                    itemElement.className = 'flex justify-between items-center py-2 border-b border-gray-700';
+                    itemElement.innerHTML = `
+                        <div>
+                            <p class="text-lg font-semibold">${product.name}</p>
+                            <p class="text-sm text-gray-400">Qty: ${item.quantity} | ${window.formatCurrency(product.price)}</p>
+                        </div>
+                        <p class="font-bold">${window.formatCurrency(product.price * item.quantity)}</p>
+                    `;
+                    cartItemsContainer.appendChild(itemElement);
+                });
 
-                // Update totals display
-                subtotalElement.textContent = `Ksh ${subtotal.toFixed(2)}`;
-                grandTotalElement.textContent = `Ksh ${grandTotal.toFixed(2)}`;
-
-                // Enable payment button
+                finalTotalElement.textContent = window.formatCurrency(cart.total);
                 payButton.disabled = false;
-                
+
             } catch (error) {
-                console.error("Error rendering cart summary:", error);
-                cartSummaryContainer.innerHTML = '<p class="text-center py-4 text-red-400">Error loading cart summary.</p>';
-                grandTotalElement.textContent = 'Ksh 0.00';
+                console.error("Error rendering cart items:", error);
+                window.displayMessage("Failed to load cart for checkout. Please refresh.", 'error');
+                payButton.disabled = true;
             }
         };
 
-
-        // --- Event Listener for Payment ---
-        checkoutForm.addEventListener('submit', async (e) => {
+        /**
+         * @desc Handles the submission of the payment form.
+         */
+        const handlePayment = async (e) => {
             e.preventDefault();
+            
+            // Collect form data
+            const name = document.getElementById('name').value.trim();
+            const phone = document.getElementById('phone').value.trim();
 
-            // Perform final validation
-            if (currentCartItems.length === 0) {
-                window.displayMessage("Your cart is empty. Cannot proceed with payment.", 'error');
+            if (!name || !phone) {
+                window.displayMessage("Please fill in your name and phone number.", 'error');
                 return;
             }
-            if (!payButton.disabled) {
-                payButton.disabled = true;
-                loadingMessage.classList.remove('hidden');
-                payButton.textContent = 'Processing...';
 
-                const name = document.getElementById('name').value;
-                const phone = phoneInput.value;
-                
-                // Get the grand total (should match total calculated in the backend if you verify it there)
-                const totalAmount = parseFloat(grandTotalElement.textContent.replace('Ksh ', '')) || 0;
-
-                // CRITICAL: The payload needs to be authenticated and sent to your Mpesa route
-                const payload = {
-                    name,
-                    phone,
-                    amount: totalAmount,
-                    // Send minimal cart details needed for the mock payment validation
-                    cart: currentCartItems.map(item => ({ 
-                        productId: item.productId, 
-                        quantity: item.quantity, 
-                        price: item.price
-                    }))
-                };
-
-                // CRITICAL: Get JWT token for authorization
-                const token = localStorage.getItem('userToken');
-                if (!token) {
-                    window.displayMessage("Authentication failed. Please log in again.", 'error');
-                    window.location.href = 'auth.html';
-                    return;
-                }
-
-                try {
-                    // Call your protected Mpesa API route
-                    const response = await fetch(`${window.BASE_URL}/api/mpesa/pay`, {
-                        method: 'POST',
-                        headers: { 
-                            "Content-Type": "application/json",
-                            'Authorization': `Bearer ${token}` // Use the token for protected Mpesa route
-                        },
-                        body: JSON.stringify(payload),
-                    });
-
-                    const data = await response.json();
-
-                    if (response.ok && data.success) {
-                        window.displayMessage(`SUCCESS! STK Push sent to your phone. Complete transaction on your device. (TX ID: ${data.transactionId})`, 'success');
-                        
-                        // Clear the cart on the backend after successful payment
-                        if (typeof window.clearCartAPI === 'function') 
-                        { window.clearCartAPI(); 
-                            // FIX: Call the correct function exposed by cart.js }
-                    }
-
-                    } else {
-                        // Handle failure responses
-                        window.displayMessage(`PAYMENT FAILED: ${data.message || 'Unknown error occurred.'}`, 'error');
-                    }
-
-                } catch (err) {
-                    console.error("Fetch error during payment:", err);
-                    window.displayMessage('Network error occurred. The server may be unreachable.', 'error');
-                } finally {
-                    // Reset UI state
-                    payButton.disabled = false;
-                    loadingMessage.classList.add('hidden');
-                    payButton.textContent = 'Pay with Mpesa';
-                    // Re-render to show empty cart or current items
-                    renderCartItems(); 
-                    window.updateCartCount();
-                }
+            if (currentCart.items.length === 0) {
+                window.displayMessage("Cannot checkout with an empty cart.", 'error');
+                return;
             }
-        });
+            
+            // Set UI state to loading
+            payButton.disabled = true;
+            loadingMessage.classList.remove('hidden');
+            payButton.textContent = 'Processing...';
 
-        // --- Initialization ---
+            // --- CRITICAL: Construct the payload for the new protected /api/mpesa/pay route ---
+            // The backend now expects cartItems and totalAmount directly from the client.
+            const payload = {
+                name,
+                phone,
+                // The backend requires the cart items but needs to strip the populated product details
+                // We map the cart items to send only the core data needed for Order creation.
+                cartItems: currentCart.items.map(item => ({
+                    productId: item.productId._id, // Send the actual MongoDB ID
+                    name: item.productId.name,     // Include product name
+                    price: item.productId.price,   // Include product price
+                    quantity: item.quantity,
+                    size: item.size,
+                    scent: item.scent
+                })),
+                totalAmount: currentCart.total
+            };
+
+            try {
+                const response = await fetch(PAY_API, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload),
+                });
+                
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    // Handle success response (Order is created and Cart is cleared by the backend)
+                    
+                    // Display success message
+                    window.displayMessage(`SUCCESS! Order Placed. Transaction ID: ${data.transactionId}`, 'success');
+                    
+                    // OPTIONAL: Redirect to an order confirmation/thank you page
+                    // Since this is a simple demo, we will simply redirect to the home page after a delay
+                    setTimeout(() => {
+                        window.location.href = `index.html?order=${data.order._id}`;
+                    }, 2000);
+
+                } else {
+                    // Handle failure responses (e.g., mock error or validation error)
+                    window.displayMessage(`PAYMENT FAILED: ${data.message || 'Unknown error occurred.'}`, 'error');
+                }
+
+            } catch (err) {
+                console.error("Fetch error during payment:", err);
+                window.displayMessage('Network error occurred. The server may be unreachable.', 'error');
+            } finally {
+                // Reset UI state
+                payButton.disabled = false;
+                loadingMessage.classList.add('hidden');
+                payButton.textContent = 'Pay with Mpesa';
+                // Re-render to show empty cart or current items
+                renderCartItems(); 
+                window.updateCartCount();
+            }
+        };
+
+        // --- Event Listeners and Initialization ---
+        paymentForm.addEventListener('submit', handlePayment);
+
         document.addEventListener('DOMContentLoaded', () => {
 
-        if (!window.checkAuthAndRedirect()) {
-                        return; // Stop execution if token is missing and redirection occurs
-                    }
+            if (!window.checkAuthAndRedirect()) {
+                return; 
+            }
 
             renderCartItems();
             window.updateCartCount();
