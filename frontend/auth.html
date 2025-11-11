@@ -126,17 +126,34 @@
 
         // Enables or disables the submit button based on form input
         const updateButtonState = (formType) => {
-            if (formType === 'login') {
-                const email = document.getElementById('login-email').value;
-                const password = document.getElementById('login-password').value;
-                loginBtn.disabled = !(email && password);
-            } else {
-                const name = document.getElementById('register-name').value;
-                const email = document.getElementById('register-email').value;
-                const password = document.getElementById('register-password').value;
-                // Simple validation: check if all fields are filled and password is at least 6 chars
-                registerBtn.disabled = !(name && email && password && password.length >= 6);
-            }
+    
+    if (formType === 'login') {
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+        
+        //  CRITICAL FIX: Define the login button
+        const loginBtn = document.getElementById('login-btn'); 
+        
+        //  CRITICAL FIX: Only set property if the button element was found
+        if (loginBtn) {
+            loginBtn.disabled = !(email && password);
+        }
+        
+    } else { // formType === 'register'
+        const name = document.getElementById('register-name').value;
+        const email = document.getElementById('register-email').value;
+        const password = document.getElementById('register-password').value;
+        
+        // CRITICAL FIX: Define the register button
+        const registerBtn = document.getElementById('register-btn'); 
+        
+        // Simple validation: check if all fields are filled and password is at least 6 chars
+        //  CRITICAL FIX: Only set property if the button element was found
+        if (registerBtn) {
+            registerBtn.disabled = !(name && email && password && password.length >= 6);
+        }
+    }
+}
         };
 
         // --- Authentication Handlers (with the critical fix) ---
