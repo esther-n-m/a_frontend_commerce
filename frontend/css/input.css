@@ -32,4 +32,7 @@
     /* Subtle background and border for a premium box effect */
     @apply bg-secondary-bg border border-gold/20 rounded-xl shadow-2xl shadow-primary-bg/50 p-6;
   }
+  .z-top {
+    z-index: 20;
+  }
 }
