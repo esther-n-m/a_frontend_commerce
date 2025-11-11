@@ -8,64 +8,7 @@
     <link href="/css/main.css" rel="stylesheet">
     <!-- Use an elegant, sophisticated font like Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
-    <!--<style>
-        :root {
-            --color-gold: #D4AF37;
-        }
-        
-        /* Keyframe for the spinner animation */
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0d0d0d;
-            color: #f5f5f5;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 1rem;
-            /* Added subtle radial gradient for visual depth */
-            background: radial-gradient(circle at center, #151515 0%, #0a0a0a 100%);
-        }
-        .text-gold {
-            color: var(--color-gold);
-        }
-        .bg-gold {
-            background-color: var(--color-gold);
-        }
-        .btn-gold {
-            background-color: var(--color-gold);
-            color: #0d0d0d;
-            transition: all 0.3s;
-        }
-        .btn-gold:hover {
-            background-color: #E0C16E;
-            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
-        }
-        .form-container {
-            width: 100%;
-            max-width: 400px;
-        }
-        .spinner {
-            display: inline-block;
-            animation: spin 1s linear infinite;
-        }
-        .message-box {
-            position: fixed;
-            top: 1rem;
-            right: 1rem;
-            z-index: 50;
-            opacity: 0;
-            transition: opacity 0.5s ease-in-out;
-            max-width: 90vw;
-        }
-        .message-box.show {
-            opacity: 1;
-        }
-    </style> -->
 </head>
 <body>
     <!-- Message Box Container -->
@@ -213,7 +156,7 @@
             loginSpinner.classList.remove('hidden');
             
             try {
-                const response = await fetch(`${window.BASE_URL}/api/users/login`, {
+                const response = await fetch(`${BACKEND_URL}/api/users/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password }),
@@ -263,7 +206,7 @@
             registerSpinner.classList.remove('hidden');
 
             try {
-                const response = await fetch(`${window.BASE_URL}/api/users/register`, {
+                const response = await fetch(`${BACKEND_URL}/api/users/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name, email, password }),
