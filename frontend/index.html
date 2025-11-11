@@ -49,7 +49,7 @@
                 <!-- Mobile Menu Button & Cart Icon -->
                 <div class="flex items-center space-x-4">
                     <!-- Mobile Menu Button (Fix: Added aria-label for accessibility) -->
-                    <button class="md:hidden text-gray-500 hover:text-gold" aria-label="Open menu">
+                    <button id="mobile-menu-button" class="md:hidden text-gray-500 hover:text-gold" aria-label="Open menu">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
                     </button>
                     <!-- Cart Icon -->
@@ -224,7 +224,7 @@ const fetchProducts = async () => {
             document.querySelectorAll('.product-card').forEach(card => {
                 card.addEventListener('click', (e) => {
                     // Check if the click was on the 'Add to Cart' button
-                    const btn = e.target.closest('[data-action="add-to-cart"]');
+                    const btn = e.target.closest('.add-to-cart-btn');
                     if (btn) {
                         // Prevent card navigation if button was clicked
                         e.stopPropagation(); 
