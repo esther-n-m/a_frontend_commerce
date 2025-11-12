@@ -181,7 +181,7 @@
 
                 const data = await response.json();
 
-                if (response.ok && data.token) {
+                if (response.ok) {
                     displayMessage(`Welcome back, ${data.user.name || 'User'}! Redirecting...`, 'success');
                     
                     // CRITICAL FIX: Store the token for subsequent protected API calls (Cart, Profile)
@@ -231,7 +231,7 @@
 
                 const data = await response.json();
 
-                if (response.ok && data.token) {
+                if (response.ok ) {
                     displayMessage('Registration successful! You are now logged in. Redirecting...', 'success');
                     
                     // CRITICAL FIX: Store the token for subsequent protected API calls (Cart, Profile)
