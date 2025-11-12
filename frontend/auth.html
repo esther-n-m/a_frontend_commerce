@@ -211,51 +211,50 @@
          * @desc Handles the Registration API call and stores the JWT token.
          */
         const handleRegister = async (e) => {
-            e.preventDefault();
+    e.preventDefault();
+    // ... data collection and UI setup ...
+
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/users/register`, {
+            // ... fetch config ...
+        });
+
+        let data = {};
+        
+        //  CRITICAL FIX: Robustly parse the response body
+        try {
+            data = await response.json();
+        } catch (jsonError) {
+            // This handles cases where the server sends a non-JSON error (e.g., 500 error page)
+            console.error("Failed to parse JSON response:", jsonError);
+            // We proceed with an empty data object so the rest of the logic can run
+        }
+
+        if (response.ok) {
+            // Success: status is 200
+            displayMessage('Registration successful! You are now logged in. Redirecting...', 'success');
             
-            const name = document.getElementById('register-name').value;
-            const email = document.getElementById('register-email').value;
-            const password = document.getElementById('register-password').value;
+            setTimeout(() => {
+                window.location.href = 'index.html'; 
+            }, 500);
+            
+        } else {
+            // Failure: status is 400, 401, or other error
+            displayMessage(data.message || 'Authentication failed. Check server logs.', 'error');
+        }
 
-            // Update UI for loading state
-            registerBtn.disabled = true;
-            registerText.textContent = 'Creating Account...';
-            registerSpinner.classList.remove('hidden');
-
-            try {
-                const response = await fetch(`${BACKEND_URL}/api/users/register`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, email, password }),
-                });
-
-                const data = await response.json();
-
-                if (response.ok ) {
-                    displayMessage('Registration successful! You are now logged in. Redirecting...', 'success');
-                    
-                    // CRITICAL FIX: Store the token for subsequent protected API calls (Cart, Profile)
-                    //localStorage.setItem('userToken', data.token); 
-                    
-                    setTimeout(() => {
-                        window.location.href = 'index.html'; 
-                    }, 500);
-                    
-                } else {
-                    // Handle API validation errors (e.g., 'User already exists')
-                    displayMessage(data.message || 'Registration failed. Try a different email.', 'error');
-                }
-            } catch (err) {
-                console.error("Register Fetch Error:", err);
-                displayMessage('Network error occurred. The backend may be unreachable.', 'error');
-            } finally {
-                // Reset UI state
-                registerText.textContent = 'Create Account';
-                registerSpinner.classList.add('hidden');
-                updateButtonState('register'); // Re-evaluate button state
-            }
-        };
-
+    } catch (err) {
+        // Network Error (server unreachable)
+        console.error("Register Fetch Error (Network):", err);
+        displayMessage('Network error occurred. The backend may be unreachable.', 'error');
+        
+    } finally {
+        //  This block will now ALWAYS run, ensuring your buttons reset
+        registerText.textContent = 'Create Account';
+        registerSpinner.classList.add('hidden');
+        updateButtonState('register'); // Re-evaluate button state
+    }
+};
 
         // --- Event Listeners and Initializer ---
         
