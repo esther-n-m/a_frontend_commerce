@@ -184,7 +184,7 @@
 
         let data = {};
         
-        // 🚨 CRITICAL FIX: Robustly parse the response body
+        //  CRITICAL FIX: Robustly parse the response body
         // This prevents the function from crashing if the server (Render) sends a 500
         // error page instead of a JSON message.
         try {
