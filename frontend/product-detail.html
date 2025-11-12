@@ -390,6 +390,8 @@ const fetchAndRenderProduct = async () => {
     const productId = parseInt(urlParams.get('id'), 10);
     const loadingTextElement = document.getElementById('loading-text');
 
+    const mainContainer = document.getElementById('product-main-container');
+
     if (!productId) {
         loadingTextElement.textContent = "Error: No product ID specified in the URL.";
         return;
