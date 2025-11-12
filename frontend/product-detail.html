@@ -401,17 +401,14 @@ const fetchAndRenderProduct = async () => {
     try {
         const response = await fetch(productUrl);
         const productData = await response.json(); // Data is stored here
-        const cardContainer = document.getElementById('product-details-card');
-        const mainContainer = document.getElementById('product-main-container');
+        
 
         if (response.ok && productData._id) {
             
-            // ⭐️ CRITICAL FIX FOR 404 IMAGE ERROR ⭐️
+            
             const imageElement = document.getElementById('product-image');
-            const imageFileName = productData.image; 
 
-            // THIS LINE IS THE FIX: Concatenate BASE_URL, /images/, and filename
-            imageElement.src = `${window.BASE_URL}/images/${imageFileName}`; 
+            imageElement.src = `${window.BASE_URL}/images/${productData.image}`;
             
             // Render the rest of the product details
             renderProduct(productData);
