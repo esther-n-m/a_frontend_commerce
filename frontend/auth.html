@@ -161,58 +161,74 @@
         /**
          * @desc Handles the Login API call and stores the JWT token.
          */
-        const handleLogin = async (e) => {
-            e.preventDefault();
+       const handleLogin = async (e) => {
+    e.preventDefault();
+    
+    // 1. Get input values
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+
+    // 2. Update UI for loading state
+    loginBtn.disabled = true;
+    loginText.textContent = 'Signing In...';
+    loginSpinner.classList.remove('hidden');
+    
+    try {
+        // 3. Send API Request
+        const response = await fetch(`${BACKEND_URL}/api/users/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            // CRITICAL: Ensure you send email and password
+            body: JSON.stringify({ email, password }),
+        });
+
+        let data = {};
+        
+        // 🚨 CRITICAL FIX: Robustly parse the response body
+        // This prevents the function from crashing if the server (Render) sends a 500
+        // error page instead of a JSON message.
+        try {
+            data = await response.json(); 
+        } catch (jsonError) {
+            console.error("Server returned non-JSON response. Check Render logs for 500 error.", jsonError);
+        }
+
+        // 4. Handle API Response
+        if (response.ok) {
+            // Success (200 status code)
+            // The token is set as an HttpOnly cookie by your userRoutes.js
+            displayMessage(`Welcome back, ${data.user.name || 'User'}! Redirecting...`, 'success');
             
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
-
-            // Update UI for loading state
-            loginBtn.disabled = true;
-            loginText.textContent = 'Signing In...';
-            loginSpinner.classList.remove('hidden');
+            setTimeout(() => {
+                window.location.href = 'index.html'; 
+            }, 500);
             
-            try {
-                const response = await fetch(`${BACKEND_URL}/api/users/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password }),
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    displayMessage(`Welcome back, ${data.user.name || 'User'}! Redirecting...`, 'success');
-                    
-                    // CRITICAL FIX: Store the token for subsequent protected API calls (Cart, Profile)
-                    //localStorage.setItem('userToken', data.token); 
-                    
-                    setTimeout(() => {
-                        window.location.href = 'index.html'; 
-                    }, 500);
-                    
-                } else {
-                    // Handle API validation errors (e.g., 'Invalid credentials')
-                    displayMessage(data.message || 'Login failed. Check your credentials.', 'error');
-                }
-            } catch (err) {
-                console.error("Login Fetch Error:", err);
-                displayMessage('Network error occurred. The backend may be unreachable.', 'error');
-            } finally {
-                // Reset UI state
-                loginText.textContent = 'Sign In';
-                loginSpinner.classList.add('hidden');
-                updateButtonState('login'); // Re-evaluate button state
-            }
-        };
+        } else {
+            // Handle validation errors (400, 401, etc.)
+            // The message comes from the backend's error handler (data.message)
+            displayMessage(data.message || 'Login failed. Check your credentials.', 'error');
+        }
+        
+    } catch (err) {
+        // 5. Handle Network Error
+        console.error("Login Fetch Error:", err);
+        displayMessage('Network error occurred. The backend may be unreachable.', 'error');
+        
+    } finally {
+        // 6. Reset UI state (This MUST run)
+        loginText.textContent = 'Sign In';
+        loginSpinner.classList.add('hidden');
+        updateButtonState('login'); // Re-evaluate button state
+    }
+};
 
 
         /**
          * @desc Handles the Registration API call and stores the JWT token.
          */
-        const handleRegister = async (e) => {
+       const handleRegister = async (e) => {
     e.preventDefault();
-    // ... data collection and UI setup ...
+    // ... UI setup (button disable/spinner) ...
 
     try {
         const response = await fetch(`${BACKEND_URL}/api/users/register`, {
@@ -221,35 +237,26 @@
 
         let data = {};
         
-        //  CRITICAL FIX: Robustly parse the response body
+        //  CRITICAL FIX: Gracefully parse the response body
+        // This ensures the code doesn't crash if the server sends a non-JSON 500 error.
         try {
-            data = await response.json();
+            data = await response.json(); 
         } catch (jsonError) {
-            // This handles cases where the server sends a non-JSON error (e.g., 500 error page)
-            console.error("Failed to parse JSON response:", jsonError);
-            // We proceed with an empty data object so the rest of the logic can run
+            console.error("Failed to parse JSON response. Server may have crashed (500).", jsonError);
         }
 
         if (response.ok) {
-            // Success: status is 200
-            displayMessage('Registration successful! You are now logged in. Redirecting...', 'success');
-            
-            setTimeout(() => {
-                window.location.href = 'index.html'; 
-            }, 500);
-            
+            // ... Success logic ...
         } else {
-            // Failure: status is 400, 401, or other error
-            displayMessage(data.message || 'Authentication failed. Check server logs.', 'error');
+            // Use the parsed data message, or a fallback if parsing failed
+            displayMessage(data.message || 'Registration failed. Check backend logs.', 'error');
         }
 
     } catch (err) {
-        // Network Error (server unreachable)
-        console.error("Register Fetch Error (Network):", err);
-        displayMessage('Network error occurred. The backend may be unreachable.', 'error');
+        // ... network error handling ...
         
     } finally {
-        //  This block will now ALWAYS run, ensuring your buttons reset
+        // This block will now ALWAYS run, ensuring your buttons reset regardless of error type
         registerText.textContent = 'Create Account';
         registerSpinner.classList.add('hidden');
         updateButtonState('register'); // Re-evaluate button state
