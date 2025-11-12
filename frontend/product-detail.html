@@ -404,6 +404,12 @@ const fetchAndRenderProduct = async () => {
 
         if (response.ok && productData.id) {
             // 3. Success: Render the product details
+
+            const imageElement = document.getElementById('product-image');
+            // Use the image property from the successfully fetched data
+            const imageFileName = productData.image; 
+            imageElement.src = `${window.BASE_URL}/images/${imageFileName}`;
+
             renderProduct(productData);
         } else if (response.status === 404) {
             // 4. Product Not Found (e.g., ID is valid but product doesn't exist)
@@ -417,6 +423,8 @@ const fetchAndRenderProduct = async () => {
         console.error("Network or parsing error:", error);
         loadingTextElement.textContent = "A network error occurred while trying to load the product.";
     }
+
+    
 };
 
         // --- Event Listeners and Initialization ---
