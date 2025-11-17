@@ -97,7 +97,9 @@
         <p id="loading-text" class="mt-4 text-gray-400">Loading product details...</p>
     </div>
 
-    <div id="product-detail" class="hidden lg:grid lg:grid-cols-2 gap-10">
+    <div id="product-main-container" class="hidden lg:grid lg:grid-cols-2 gap-10">
+
+   <!-- <div id="product-detail" class="hidden lg:grid lg:grid-cols-2 gap-10"> -->
         
         <div id="product-image-section" class="lg:sticky lg:top-24 rounded-lg overflow-hidden shadow-2xl border border-gray-800">
             <img id="product-image" class="w-full h-auto object-cover" 
@@ -157,6 +159,7 @@
             <p id="stock-status" class="mt-4 text-sm text-gray-500">In Stock</p>
 
         </div>
+    
     </div>
 </main>
 
@@ -200,6 +203,7 @@
         const qtyDisplay = document.getElementById('qty-display');
         const addToCartBtn = document.getElementById('add-to-cart-btn');
         const optionsContainer = document.getElementById('options-container');
+        const mainContainer = document.getElementById('product-main-container');
 
         // --- Utility & UI Functions ---
 
@@ -379,8 +383,9 @@ const renderOptions = (options) => {
             
             // Hide loading state and show content
             loadingState.classList.add('hidden');
-            productImageSection.classList.remove('hidden');
-            productInfoSection.classList.remove('hidden');
+            //productImageSection.classList.remove('hidden');
+            //productInfoSection.classList.remove('hidden');
+            mainContainer.classList.remove('hidden');
         };
 
      
@@ -417,7 +422,7 @@ const fetchAndRenderProduct = async () => {
 
             // Hide loading text and show content
             loadingTextElement.classList.add('hidden');
-            mainContainer.classList.remove('hidden');
+            //mainContainer.classList.remove('hidden');
 
 
         } else if (response.status === 404) {
