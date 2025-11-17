@@ -373,10 +373,10 @@ const renderOptions = (options) => {
             document.getElementById('product-name').textContent = product.name;
             document.getElementById('product-price').textContent = formatCurrency(product.price);
             document.getElementById('product-description').textContent = product.description;
-            document.getElementById('product-image').src = product.image;
-            document.getElementById('product-image').onerror = (e) => {
-                e.target.src = `https://placehold.co/600x600/181818/D4AF37?text=Image+Missing`;
-            };
+            //document.getElementById('product-image').src = product.image;
+            //document.getElementById('product-image').onerror = (e) => {
+              //  e.target.src = `https://placehold.co/600x600/181818/D4AF37?text=Image+Missing`;
+            //};
 
 
             renderOptions(product.options || {});
@@ -417,6 +417,10 @@ const fetchAndRenderProduct = async () => {
 
             imageElement.src = `${window.BASE_URL}/images/${productData.image}`;
             
+          imageElement.onerror = (e) => {
+                e.target.src = `https://placehold.co/600x600/181818/D4AF37?text=Image+Missing`;
+            };
+
             // Render the rest of the product details
             renderProduct(productData);
 
