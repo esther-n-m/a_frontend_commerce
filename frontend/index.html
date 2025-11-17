@@ -196,7 +196,7 @@ const fetchProducts = async () => {
                     <img src="${window.BASE_URL}/images/${product.image}" alt="${product.name}" class="w-full h-48 object-cover rounded-md mb-4 hover:opacity-90">
                     <h3 class="text-xl font-light text-white">${product.name}</h3>
                     <p class="text-gold font-bold my-2">${window.formatCurrency(product.price)}</p>
-                    <button data-product-id="${product._id}" 
+                    <button data-product-id="${product.id}" 
                             data-product-name="${product.name}" 
                             data-product-price="${product.price}" 
                             data-product-image="${window.BASE_URL}/images/${product.image}"
