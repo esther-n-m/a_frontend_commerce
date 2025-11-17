@@ -224,21 +224,39 @@
 
 
         const checkOptionsAndToggleCartButton = () => {
-    if (!productData || !productData.options) return;
+    // 1. Exit early if product data is not loaded (shouldn't happen here, but safe)
+    if (!productData) {
+        addToCartBtn.disabled = true;
+        addToCartBtn.textContent = 'Loading...';
+        return;
+    }
+
+    // Get the required options keys. Use an empty array if 'options' property is missing or null.
+    const requiredOptions = productData.options ? Object.keys(productData.options) : [];
     
-    const requiredOptions = Object.keys(productData.options);
+    // Check if the quantity is valid (default to 1 if not)
+    const quantity = parseInt(qtyDisplay.value, 10) || 1; 
+
+    // CASE A: Product has NO options defined (e.g., requiredOptions.length === 0)
+    if (requiredOptions.length === 0) {
+        const totalPrice = productData.price * quantity;
+        addToCartBtn.textContent = `Add to Cart - ${window.formatCurrency(totalPrice)}`;
+        addToCartBtn.disabled = false; // ENABLE THE BUTTON!
+        return;
+    }
+
+    // CASE B: Product HAS options defined (i.e., requiredOptions.length > 0)
     const allSelected = requiredOptions.every(key => selectedOptions[key]);
 
     addToCartBtn.disabled = !allSelected;
-    if (allSelected) {
-    // 1. Calculate total price outside the template literal for clarity
-    const totalPrice = productData.price * parseInt(qtyDisplay.value);
     
-    // 2. Use the correct global KSh formatting function
-    addToCartBtn.textContent = `Add to Cart - ${window.formatCurrency(totalPrice)}`;
-} else {
-    addToCartBtn.textContent = "Select Options to Add to Cart";
-}
+    if (allSelected) {
+        const totalPrice = productData.price * quantity;
+        addToCartBtn.textContent = `Add to Cart - ${window.formatCurrency(totalPrice)}`;
+    } else {
+        // This is the message for when options exist but haven't been selected yet
+        addToCartBtn.textContent = "Select Options to Add to Cart";
+    }
 };
         
       
