@@ -430,6 +430,8 @@ const fetchAndRenderProduct = async () => {
         const response = await fetch(productUrl);
         //Updates the GLOBAL variable defined at the top
          productData = await response.json(); // Data is stored here
+
+         console.log("Product Data Received:", productData);
         
 
         if (response.ok && productData.id) {
