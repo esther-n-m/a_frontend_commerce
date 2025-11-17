@@ -255,8 +255,11 @@
         quantity: quantity,
         image: productData.image,
         // Use window.selectedOptions for consistency
-        size: window.selectedOptions.size || null,
-        scent: window.selectedOptions.scent || null
+        size: selectedOptions.size || null,
+        scent: selectedOptions.scent || null ,
+        material: selectedOptions.material || null,
+        color: selectedOptions.color || null,
+        set: selectedOptions.set || null
     };
 
     addToCartBtn.disabled = true;
@@ -407,6 +410,7 @@ const fetchAndRenderProduct = async () => {
 
     try {
         const response = await fetch(productUrl);
+        //Updates the GLOBAL variable defined at the top
          productData = await response.json(); // Data is stored here
         
 
