@@ -15,16 +15,16 @@ window.BASE_URL = BACKEND_URL;
  * @param {number} amount - The price amount.
  * @returns {string} The formatted currency string.
  */
-function formatCurrency(amount) {
+window.formatCurrency = (amount)  => {
     // Uses the Kenyan Shilling (KES) locale and currency code.
     // maximumFractionDigits: 0 is used because the prices in products.json are whole numbers.
     return new Intl.NumberFormat('en-KE', { 
         style: 'currency', 
         currency: 'KES', 
-        maximumFractionDigits: 0 
+        maximumFractionDigits: 2
     }).format(amount);
-}
-window.formatCurrency = formatCurrency; // Expose globally
+};
+//window.formatCurrency = formatCurrency; // Expose globally
 
 /*function getToken() {
     // Fetches the JWT token stored by auth.html after successful login
