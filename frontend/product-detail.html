@@ -387,9 +387,14 @@ const fetchAndRenderProduct = async () => {
 
     const mainContainer = document.getElementById('product-main-container');
 
-    if (!productId) {
-        loadingTextElement.textContent = "Error: No product ID specified in the URL.";
-        return;
+    if (productId) {
+    // Then call the API to fetch the product data
+    fetch(`${window.BASE_URL}/api/products/${productId}`)
+        .then(response => response.json())
+        // ... display product details ...
+    } else {
+        // This is the error path you are currently seeing
+        document.getElementById('product-details').innerHTML = "Error: The product ID specified in the URL is undefined.";
     }
     
     // 2. Construct API URL and Fetch Data
