@@ -410,7 +410,7 @@ const fetchAndRenderProduct = async () => {
         const productData = await response.json(); // Data is stored here
         
 
-        if (response.ok && productData._id) {
+        if (response.ok && productData.id) {
             
             
             const imageElement = document.getElementById('product-image');
